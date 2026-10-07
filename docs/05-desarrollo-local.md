@@ -44,6 +44,35 @@ Las contraseñas no están en el repo: las tiene el responsable del proyecto.
 un documento reservado. Si staging se ensucia, se puede regenerar
 (ver [06 · Base de datos](06-base-de-datos.md)).
 
+## Pruebas automáticas
+
+Una vez, después de clonar:
+
+```bash
+npm install
+```
+```bash
+npx playwright install chromium
+```
+
+| Comando | Qué hace |
+|---|---|
+| `npm run test:unit` | Vitest. Carga `app.js` en un navegador simulado, sin red, y prueba los cálculos (totales, honorarios, participación, CAC, cuotas), las fechas, el escape de HTML y reglas de seguridad del código (sin XSS en manejadores, librerías con SRI, sin claves secretas en `public/`, borrados verificados) |
+| `npm run test:watch` | Lo mismo, re-ejecutando al guardar |
+| `npm run test:seguridad` | Sondeo sin login contra el entorno de `.env.local` |
+| `npm run test:e2e` | Playwright en Chromium contra staging: pantalla de acceso, login inválido, rendición inválida y, si están las contraseñas, recorridos por rol |
+| `npm run verificar` | Las tres juntas |
+
+Las pruebas por rol de Playwright necesitan las contraseñas de los usuarios
+de staging en `E2E_ADMIN_PASSWORD`, `E2E_CARGA_PASSWORD`,
+`E2E_INVERSOR_A_PASSWORD` y `E2E_INVERSOR_B_PASSWORD`. Sin ellas se saltean.
+En GitHub se cargan como *secrets* del repositorio (*Settings → Secrets and
+variables → Actions*).
+
+Para agregar una prueba de un cálculo, sumar el caso en
+`tests/unit/calculos.test.js`; si la función todavía no está expuesta,
+agregarla a la lista `EXPORTAR` de `tests/unit/cargar-app.js`.
+
 ## Flujo de trabajo
 
 1. Crear una rama desde `main` actualizado:
@@ -61,13 +90,14 @@ un documento reservado. Si staging se ensucia, se puede regenerar
 3. Si toca la base, crear la migración y aplicarla **primero en staging**.
 4. Correr las pruebas:
    ```bash
-   npm run test:seguridad
+   npm run verificar
    ```
 5. Commit y push de la rama; abrir el pull request en GitHub. Vercel arma
-   una vista previa.
-6. Mergear a `main`. Vercel publica en producción.
+   una vista previa y la CI corre las pruebas.
+6. Con la CI en verde, mergear a `main`. Vercel publica en producción.
 
-Nunca se trabaja directamente sobre `main`.
+Nunca se trabaja directamente sobre `main`. Las reglas completas están en
+[`AGENTS.md`](../AGENTS.md).
 
 ## Convenciones del código
 

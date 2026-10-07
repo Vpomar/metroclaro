@@ -51,19 +51,22 @@ npm run dev                    # http://localhost:8000
 ## Pruebas
 
 ```bash
+npm install                    # una vez
+npx playwright install chromium
+npm run test:unit              # cálculos y reglas del código (Vitest, sin red)
 npm run test:seguridad         # sondeo sin login contra el entorno de .env.local
+npm run test:e2e               # navegador real contra staging (Playwright)
 ```
 
-Las pruebas de RLS por rol están en `tests/seguridad/rls-roles.sql` y se
-corren solo contra staging.
+La CI de GitHub corre las tres en cada pull request. Las pruebas de RLS por
+rol (`tests/seguridad/rls-roles.sql`) y de integridad se corren solo contra
+staging.
 
-## Flujo de trabajo
+## Cómo se trabaja
 
-1. Toda funcionalidad nueva se hace en una rama nueva.
-2. Se prueba en local contra staging.
-3. Se abre un pull request en GitHub y se mergea a `main`.
-4. Los cambios de base de datos van siempre como migración en
-   `supabase/migrations/`, primero a staging y después a producción.
+Reglas obligatorias en [`AGENTS.md`](AGENTS.md) (y [`CLAUDE.md`](CLAUDE.md)
+para Claude Code). En resumen: **cada funcionalidad en una rama nueva, y se
+integra a `main` con un pull request desde GitHub.**
 
 ## Publicación
 
