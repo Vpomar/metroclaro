@@ -10,6 +10,8 @@
 //  Usa la misma clave que leer-comprobante.
 // =====================================================================
 
+import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -48,9 +50,32 @@ async function pedirle(clave: string, texto: string, tokens = 1200) {
     .trim();
 }
 
+const MAX_BYTES = 64 * 1024;
+const corto = (v: unknown) => String(v ?? '').slice(0, 2000);
+
+// Solo admin y carga. Tener el encabezado no alcanza: la clave pública
+// del proyecto también viaja ahí, así que se valida la sesión real.
+async function exigirEquipo(req: Request): Promise<Response | null> {
+  const auth = req.headers.get('Authorization');
+  if (!auth) return json({ error: 'Falta autenticación.' }, 401);
+  const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+    global: { headers: { Authorization: auth } }
+  });
+  const { data, error } = await sb.auth.getUser();
+  if (error || !data?.user) return json({ error: 'Sesión inválida.' }, 401);
+  const { data: puede } = await sb.rpc('puede_editar');
+  if (puede !== true) return json({ error: 'Tu usuario no puede usar el asistente.' }, 403);
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
-  if (!req.headers.get('Authorization')) return json({ error: 'Falta autenticación.' }, 401);
+
+  const rechazo = await exigirEquipo(req);
+  if (rechazo) return rechazo;
+  if (Number(req.headers.get('content-length') || 0) > MAX_BYTES) {
+    return json({ error: 'El pedido es demasiado grande.' }, 413);
+  }
 
   const clave = Deno.env.get('ANTHROPIC_API_KEY');
   if (!clave) return json({ error: 'Falta configurar ANTHROPIC_API_KEY.' }, 500);
@@ -94,7 +119,8 @@ Deno.serve(async (req) => {
 
     // -----------------------------------------------------------------
     if (accion === 'pedido') {
-      const { obra, rubro, detalle, vence, ficha, estudio } = cuerpo as Record<string, string>;
+      const [obra, rubro, detalle, vence, ficha, estudio] =
+        ['obra', 'rubro', 'detalle', 'vence', 'ficha', 'estudio'].map(k => corto(cuerpo[k]));
 
       const consigna = [
         'Redactá un correo breve y profesional pidiendo presupuesto a un proveedor',

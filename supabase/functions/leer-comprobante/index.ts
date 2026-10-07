@@ -9,6 +9,8 @@
 //  La clave se carga con: supabase secrets set ANTHROPIC_API_KEY=...
 // =====================================================================
 
+import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -21,12 +23,32 @@ const json = (cuerpo: unknown, status = 200) =>
     headers: { ...CORS, 'Content-Type': 'application/json' }
   });
 
+// Una foto de 8 MB pesa unos 11 MB en base64.
+const MAX_BYTES = 12 * 1024 * 1024;
+
+// Solo admin y carga. Tener el encabezado no alcanza: la clave pública
+// del proyecto también viaja ahí, así que se valida la sesión real.
+async function exigirEquipo(req: Request): Promise<Response | null> {
+  const auth = req.headers.get('Authorization');
+  if (!auth) return json({ error: 'Falta autenticación.' }, 401);
+  const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+    global: { headers: { Authorization: auth } }
+  });
+  const { data, error } = await sb.auth.getUser();
+  if (error || !data?.user) return json({ error: 'Sesión inválida.' }, 401);
+  const { data: puede } = await sb.rpc('puede_editar');
+  if (puede !== true) return json({ error: 'Tu usuario no puede cargar comprobantes.' }, 403);
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
-  // Solo usuarios autenticados. Sin encabezado no se procesa nada.
-  if (!req.headers.get('Authorization')) {
-    return json({ error: 'Falta autenticación.' }, 401);
+  const rechazo = await exigirEquipo(req);
+  if (rechazo) return rechazo;
+
+  if (Number(req.headers.get('content-length') || 0) > MAX_BYTES) {
+    return json({ error: 'El archivo es demasiado grande.' }, 413);
   }
 
   const clave = Deno.env.get('ANTHROPIC_API_KEY');
@@ -39,6 +61,7 @@ Deno.serve(async (req) => {
     return json({ error: 'Cuerpo inválido.' }, 400);
   }
   if (!archivo) return json({ error: 'No llegó el archivo.' }, 400);
+  if (archivo.length > MAX_BYTES) return json({ error: 'El archivo es demasiado grande.' }, 413);
 
   const bloque = tipo === 'application/pdf'
     ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: archivo } }

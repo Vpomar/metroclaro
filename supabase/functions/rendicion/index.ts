@@ -9,7 +9,7 @@
 //  El --no-verify-jwt es necesario: quien entra no tiene sesión.
 // =====================================================================
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   const { obra_id, inversor_id } = enlace;
 
   // 2. Traer solo lo que corresponde
-  const [obra, inversor, part, clases, aportes, rubros, presu, comp, avances, cuotas, ventas] =
+  const [obra, inversor, part, clases, aportes, rubros, presu, comp, avances, ventas] =
     await Promise.all([
       db.from('obras').select('nombre, pct_conduccion, pct_administracion, pct_desarrolladora')
         .eq('id', obra_id).single(),
@@ -71,10 +71,17 @@ Deno.serve(async (req) => {
         .eq('obra_id', obra_id).eq('afecta_caja', true).order('fecha'),
       db.from('avances').select('fecha, titulo, descripcion, pct_avance, archivo')
         .eq('obra_id', obra_id).order('fecha', { ascending: false }).limit(12),
-      db.from('cuotas').select('id, venta_id, numero, vencimiento, monto_base, moneda, estado, monto_cobrado'),
       db.from('ventas').select('id, cliente, unidad, modalidad, indice_base, inversor_id')
         .eq('obra_id', obra_id).eq('inversor_id', inversor_id)
     ]);
+
+  // Cuotas solo de las ventas de este inversor, filtradas en la base
+  const misVentas = (ventas.data ?? []).map(v => v.id);
+  const cuotas = misVentas.length
+    ? await db.from('cuotas')
+        .select('id, venta_id, numero, vencimiento, monto_base, moneda, estado, monto_cobrado')
+        .in('venta_id', misVentas)
+    : { data: [] };
 
   if (obra.error || inversor.error) return json({ error: 'No se pudo armar la rendición.' }, 500);
 
@@ -88,9 +95,14 @@ Deno.serve(async (req) => {
     fotos.push({ ...a, url: data?.signedUrl ?? null, archivo: undefined });
   }
 
-  // 4. Cuotas solo de las ventas de este inversor
-  const misVentas = (ventas.data ?? []).map(v => v.id);
-  const misCuotas = (cuotas.data ?? []).filter(c => misVentas.includes(c.venta_id));
+  // 4. Aportes de los demás: solo el total por clase, que es lo que la
+  //    página necesita para calcular la participación. Ni fechas, ni
+  //    montos individuales, ni a quién pertenecen.
+  const totalPorClase = new Map<string, number>();
+  for (const a of aportes.data ?? []) {
+    totalPorClase.set(a.clase, (totalPorClase.get(a.clase) ?? 0) + Number(a.usd));
+  }
+  const aportesTotales = [...totalPorClase].map(([clase, usd]) => ({ clase, usd }));
 
   // 5. Registrar la visita, sin bloquear la respuesta
   db.rpc('sumar_visita', { p_enlace: enlace.id }).then(() => {}, () => {});
@@ -100,7 +112,7 @@ Deno.serve(async (req) => {
     inversor: inversor.data,
     participacion: part.data ?? { comp_a: 0, comp_b: 0 },
     clases: clases.data ?? [],
-    aportes: aportes.data ?? [],
+    aportes: aportesTotales,
     mis_aportes: (aportes.data ?? []).filter(a => a.inversor_id === inversor_id)
       .map(a => ({ ...a, inversor_id: undefined })),
     rubros: rubros.data ?? [],
@@ -108,7 +120,7 @@ Deno.serve(async (req) => {
     comprobantes: comp.data ?? [],
     avances: fotos,
     ventas: ventas.data ?? [],
-    cuotas: misCuotas,
+    cuotas: cuotas.data ?? [],
     titulo: enlace.titulo,
     emitido: new Date().toISOString()
   });

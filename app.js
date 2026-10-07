@@ -1051,7 +1051,7 @@ function asignarUnidad(id){
     .sort((a,b)=>a.nombre.localeCompare(b.nombre));
   const vs = ventasDe(o.id);
 
-  modal(`Situación de ${u.codigo}`, `
+  modal(`Situación de ${esc(u.codigo)}`, `
     <div class="campo ancho"><label for="as-estado">Estado</label>
       <select id="as-estado" onchange="tglAsignar()">
         ${Object.entries(ESTADO_UNIDAD).map(([k,v])=>
@@ -1456,7 +1456,7 @@ function vGastos(o){
     <th class="der">En USD</th><th></th></tr></thead><tbody>
     ${gs.map(g=>`<tr><td class="num">${fecha(g.fecha)}</td>
       <td>${esc(g.proveedor)}${g.detalle?`<br><span class="pct">${esc(g.detalle)}</span>`:''}
-        ${g.archivo?`<br><button class="link" onclick="verArchivo('${g.archivo}')">Ver comprobante</button>`:''}</td>
+        ${g.archivo?`<br><button class="link" data-ruta="${esc(g.archivo)}" onclick="verArchivo(this.dataset.ruta)">Ver comprobante</button>`:''}</td>
       <td>${esc(rubro(g.rubro_id)?.nombre||'—')}
         ${g.computa_honorarios===false?'<br><span class="pct">no computa honorarios</span>':''}</td>
       <td class="ocultar-chico"><span class="chip ${g.tipo==='Sin comprobante'?'a':''}">${esc(g.tipo)}</span>
@@ -1488,7 +1488,7 @@ function vRubros(o){
   D.rubros.forEach(r => {
     if(r.grupo !== grupo){ grupo = r.grupo;
       filas += `<tr class="grupo-rubro"><td colspan="6">${esc(grupo)}
-        ${puedeEditar()?` <button class="link" onclick="renombrarGrupo('${esc(grupo)}')">renombrar</button>`:''}
+        ${puedeEditar()?` <button class="link" data-grupo="${esc(grupo)}" onclick="renombrarGrupo(this.dataset.grupo)">renombrar</button>`:''}
         </td></tr>`; }
     const p = presu(o.id,r.id), e = ejecutado(o.id,r.id), d = p-e;
     const auto = esHonorario(r) && pctHon(o.id, r.nombre);
@@ -1687,7 +1687,7 @@ function vInversores(o){
       ${f.asignadas.length?`<br><span class="chip">${f.asignadas.map(esc).join(' · ')}</span>`:''}
       ${puedeEditar()?`<br><button class="link" onclick="formParticipacion('${f.p.id}')">Editar</button>`:''}
       ${puedeEditar() && !f.n
-        ? `<br><button class="link" onclick="quitarDeObra('${f.p.id}','${esc(f.i.nombre)}')">Quitar de la obra</button>` : ''}</td>
+        ? `<br><button class="link" data-nombre="${esc(f.i.nombre)}" onclick="quitarDeObra('${f.p.id}', this.dataset.nombre)">Quitar de la obra</button>` : ''}</td>
       <td class="der num">${f.a?fmtUsd(f.a):'—'}
         ${f.a?`<br><span class="pct">${fmtPct(f.partA)} de la clase</span>`:''}
         ${f.cA?`<br><span class="pct">de ${fmtUsd(f.cA)} suscriptos</span>`:''}</td>
@@ -2054,7 +2054,7 @@ function bloqueEnlaces(o){
             ${e.ultima_visita?`<br><span class="pct">${new Date(e.ultima_visita).toLocaleDateString('es-AR')}</span>`:''}</td>
           <td class="num ocultar-chico">${e.vence?fecha(e.vence):'sin vencimiento'}</td>
           <td class="der">
-            ${e.activo && !vencido ? `<button class="link" onclick="copiarEnlace('${esc(e.token)}')">Copiar enlace</button>` : ''}
+            ${e.activo && !vencido ? `<button class="link" data-token="${esc(e.token)}" onclick="copiarEnlace(this.dataset.token)">Copiar enlace</button>` : ''}
             ${e.activo ? `<br><button class="link" onclick="bajaEnlace('${e.id}')">Dar de baja</button>` : ''}
           </td></tr>`;
       }).join('')}
@@ -2153,7 +2153,7 @@ function vVentas(o){
             onclick="abrirVenta('${v.id}')">${esc(v.cliente)}</button>
         ${v.cuit?`<br><span class="pct num">${esc(v.cuit)}</span>`:''}
         ${v.inversor_id?`<br><span class="chip">${esc(inv(v.inversor_id)?.nombre||'')}</span>`:''}
-        ${v.archivo?`<br><button class="link" onclick="verArchivo('${esc(v.archivo)}')">Ver comprobante</button>`:''}</td>
+        ${v.archivo?`<br><button class="link" data-ruta="${esc(v.archivo)}" onclick="verArchivo(this.dataset.ruta)">Ver comprobante</button>`:''}</td>
       <td class="ocultar-chico"><span class="chip">${esc(v.tipo)}</span>
         ${v.numero?`<br><span class="pct num">${esc(v.numero)}</span>`:''}
         ${v.cae?`<br><span class="pct num">CAE ${esc(v.cae)}</span>`:''}</td>
@@ -2528,7 +2528,7 @@ function vDocumentos(o){
           ? `<span class="chip a">${esc(inv(d.inversor_id)?.nombre||'reservado')}</span>`
           : '<span class="pct">todos</span>'}
           ${d.unidad?`<br><span class="chip">${esc(d.unidad)}</span>`:''}</td>
-        <td class="der"><button class="link" onclick="verArchivo('${esc(d.archivo)}')">Abrir</button></td>
+        <td class="der"><button class="link" data-ruta="${esc(d.archivo)}" onclick="verArchivo(this.dataset.ruta)">Abrir</button></td>
         <td class="der">${puedeEditar()?`<button class="link" onclick="formDocumento('${d.id}')">Editar</button>`:''}
           ${esAdmin()?`<br><button class="link" onclick="borrar('documentos','${d.id}')">Eliminar</button>`:''}</td>
       </tr>`;
@@ -3036,8 +3036,8 @@ function vUsuarios(){
         ? new Date(u.ultimo_acceso).toLocaleDateString('es-AR')
         : '<span class="pct">nunca entró</span>'}</td>
       <td class="der">
-        <button class="link" onclick="recuperarClave('${esc(u.email)}')">Enviar recuperación</button>
-        ${u.soy_yo?'':`<br><button class="link" onclick="eliminarUsuario('${u.id}','${esc(u.nombre||u.email)}')">Eliminar</button>`}</td>
+        <button class="link" data-email="${esc(u.email)}" onclick="recuperarClave(this.dataset.email)">Enviar recuperación</button>
+        ${u.soy_yo?'':`<br><button class="link" data-nombre="${esc(u.nombre||u.email)}" onclick="eliminarUsuario('${u.id}', this.dataset.nombre)">Eliminar</button>`}</td>
       </tr>`).join('')}
     </tbody></table>` : `<div class="vacio">No se pudieron listar los usuarios.
       Revisá que la función esté desplegada.</div>`}
