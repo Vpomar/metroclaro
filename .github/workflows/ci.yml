@@ -1,0 +1,65 @@
+# Integración continua: corre en cada pull request y en cada push a main.
+# Las pruebas usan STAGING, nunca producción.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Valores públicos de staging (URL y publishable key). No son secretos.
+  SUPABASE_URL: https://tverjzxsmwnrnpnsimgh.supabase.co
+  SUPABASE_KEY: sb_publishable_jaulU_4O4K9LPVdthkQI_Q_WCFb6voK
+
+jobs:
+  unitarias:
+    name: Pruebas unitarias
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run test:unit
+
+  seguridad:
+    name: Sondeo de seguridad (staging)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      # --escritura: en staging se puede intentar escribir sin riesgo
+      - run: node tests/seguridad/sondeo-anon.mjs --escritura
+
+  e2e:
+    name: Pruebas end-to-end (staging)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          CI: true
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_CARGA_PASSWORD: ${{ secrets.E2E_CARGA_PASSWORD }}
+          E2E_INVERSOR_A_PASSWORD: ${{ secrets.E2E_INVERSOR_A_PASSWORD }}
+          E2E_INVERSOR_B_PASSWORD: ${{ secrets.E2E_INVERSOR_B_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: reporte-playwright
+          path: playwright-report/
+          retention-days: 7

@@ -9,6 +9,16 @@
   },
   "scripts": {
     "dev": "node scripts/servidor-local.mjs",
-    "test:seguridad": "node tests/seguridad/sondeo-anon.mjs"
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:seguridad": "node tests/seguridad/sondeo-anon.mjs",
+    "verificar": "npm run test:unit && npm run test:seguridad && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "jsdom": "30.1.2",
+    "vitest": "5.0.3"
   }
 }
