@@ -5,6 +5,10 @@ proveedores, inversores, ventas, cuotas y rendiciones. El frontend es un sitio
 estático (HTML + JavaScript sin framework) y el backend es Supabase
 (Postgres con RLS, Auth, Storage y Edge Functions).
 
+**Documentación completa en [`docs/`](docs/README.md)**: funcionamiento,
+arquitectura, modelo de datos, seguridad, desarrollo, migraciones,
+despliegue, respaldos y operación.
+
 ## Estructura
 
 ```

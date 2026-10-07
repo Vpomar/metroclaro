@@ -1,0 +1,84 @@
+# 05 · Desarrollo local
+
+## Requisitos
+
+- Node 20 o superior (solo para el servidor local y las pruebas; la app no
+  tiene build).
+- Git y acceso al repositorio `Vpomar/metroclaro`.
+- Acceso al proyecto **metroclaro-staging** en Supabase.
+
+## Puesta en marcha
+
+```bash
+git clone https://github.com/Vpomar/metroclaro.git
+cd metroclaro
+cp .env.example .env.local
+npm run dev
+```
+
+Se abre en http://localhost:8000.
+
+`.env.local` apunta a **staging** por defecto. El servidor local
+(`scripts/servidor-local.mjs`) sirve `public/` y reemplaza `config.js` por
+los valores de `.env.local`. Así nunca se trabaja contra producción por
+accidente, y el `config.js` del repo (el de producción) no se toca.
+
+> Abrir `index.html` con doble clic no funciona: el navegador bloquea las
+> peticiones desde `file://`.
+
+## Usuarios de prueba (staging)
+
+| Email | Rol | Ve |
+|---|---|---|
+| `admin@metroclaro.test` | admin | Todo |
+| `carga@metroclaro.test` | carga | Todo |
+| `inversor.a@metroclaro.test` | inversor | Solo Obra Demo Norte |
+| `inversor.b@metroclaro.test` | inversor | Solo Obra Demo Sur |
+
+Las contraseñas no están en el repo: las tiene el responsable del proyecto.
+
+## Datos de staging
+
+`supabase/seed.sql` carga datos ficticios: dos obras, tres inversores
+(A en Norte, B en Sur, C en las dos), aportes, comprobantes, proveedores y
+un documento reservado. Si staging se ensucia, se puede regenerar
+(ver [06 · Base de datos](06-base-de-datos.md)).
+
+## Flujo de trabajo
+
+1. Crear una rama desde `main` actualizado:
+   ```bash
+   git switch main
+   ```
+   ```bash
+   git pull
+   ```
+   ```bash
+   git switch -c tipo/descripcion-corta
+   ```
+   Prefijos: `funcionalidad/`, `correccion/`, `seguridad/`, `docs/`, `base/`.
+2. Hacer el cambio y probarlo en local contra staging.
+3. Si toca la base, crear la migración y aplicarla **primero en staging**.
+4. Correr las pruebas:
+   ```bash
+   npm run test:seguridad
+   ```
+5. Commit y push de la rama; abrir el pull request en GitHub. Vercel arma
+   una vista previa.
+6. Mergear a `main`. Vercel publica en producción.
+
+Nunca se trabaja directamente sobre `main`.
+
+## Convenciones del código
+
+- Todo en castellano: nombres de funciones, variables, comentarios y textos.
+- Antes de insertar texto en HTML se escapa con `esc()`.
+- **Nunca** se interpola texto dentro de un `onclick="…"`: se pasa por un
+  atributo `data-*` y el manejador lo lee con `this.dataset` (ver
+  [Auditoría](auditoria-2026-10.md), H-04).
+- Las escrituras usan `guardar()` y `borrar()`, que verifican las filas
+  afectadas. Para escrituras directas, usar `.select()` y comprobar el
+  resultado.
+- Las fechas se arman con `fechaLocal()`, `hoy()` y `sumarMeses()`. No usar
+  `toISOString().slice(0,10)`: devuelve la fecha en UTC.
+- Las lecturas grandes usan `todo(tabla)`, que pagina de a 1000 filas.
