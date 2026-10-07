@@ -100,6 +100,11 @@ Detalle: `docs/04-seguridad.md`.
 - Ningún archivo salvo `nucleo/inicio.js` ejecuta código al cargar. Los
   nombres de funciones son únicos en toda la app.
 - Todo en castellano: funciones, variables, comentarios, textos y commits.
+- **La app se usa en celular, iPad y PC.** Las tablas se envuelven solas en
+  un recuadro que se desplaza (`envolverTablas()`); no darles anchos fijos.
+  Los ajustes para pantallas chicas van en el bloque `@media (max-width:820px)`
+  de `css/estilos.css`. Si se agrega una pestaña, sumarla a
+  `tests/e2e/responsive.spec.js`.
 - Insertar texto en HTML siempre con `esc()`.
 - **Nunca** interpolar texto dentro de `onclick="…"`: pasarlo en un atributo
   `data-*` y leerlo con `this.dataset`. Solo se interpolan ids (`uuid`).
@@ -118,7 +123,7 @@ Detalle: `docs/04-seguridad.md`.
 |---|---|---|
 | `npm run test:unit` | Cálculos, fechas, escape y reglas de seguridad del código (Vitest) | Nada (sin red) |
 | `npm run test:seguridad` | Sondeo sin login: tablas, vistas, funciones, archivos, registro, Edge Functions | `.env.local` |
-| `npm run test:e2e` | Navegador real: login, rendición, recorridos por rol (Playwright) | Staging |
+| `npm run test:e2e` | Navegador real: login, rendición, recorridos por rol y que cada pestaña entre en celular, iPad y PC sin desbordarse (Playwright) | Staging |
 | `tests/seguridad/rls-roles.sql` | Qué ve y qué puede hacer cada rol | Solo staging |
 | `tests/seguridad/integridad.sql` | Cierre, caja, autoría, último admin, plan de cuotas | Solo staging |
 | `tests/seguridad/huella-esquema.sql` | Que staging y producción tengan el mismo esquema | Los dos (solo lectura) |

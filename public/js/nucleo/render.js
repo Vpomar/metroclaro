@@ -63,8 +63,33 @@ function dibujar(){
         proveedores:vProveedores,inversores:vInversores,avance:vAvance,
         contador:vContador,rendicion:vRendicion,documentos:vDocumentos,
         ventas:vVentas,analisis:vAnalisis,unidades:vUnidades,historial:vHistorial}[vista])(o);
+  envolverTablas(document.getElementById('cuerpo'));
   pintarFuente();
 }
-function verObra(id){ obraActiva = id; if(vista==='panel') vista = 'resumen'; render(); }
-function verTab(k){ vista = k; render(); }
+function verObra(id){ obraActiva = id; if(vista==='panel') vista = 'resumen'; tglMenu(false); render(); }
+function verTab(k){ vista = k; tglMenu(false); render(); }
+
+/* Las tablas anchas se desplazan dentro de su propio recuadro. Sin esto,
+   en un celular una tabla de ocho columnas empujaba la página entera hacia
+   el costado. */
+function envolverTablas(raiz){
+  raiz.querySelectorAll('table').forEach(t => {
+    if(t.parentElement.classList.contains('tabla')) return;
+    const caja = document.createElement('div');
+    caja.className = 'tabla';
+    t.before(caja);
+    caja.append(t);
+  });
+}
+
+/* En pantallas chicas la lista de obras se pliega bajo el botón "Obras"
+   (en la PC siempre está visible y el botón no se muestra). Elegir una
+   obra o una pestaña la vuelve a cerrar. */
+function tglMenu(abrir){
+  const aside = document.querySelector('aside');
+  if(!aside) return;
+  const abierto = abrir ?? !aside.classList.contains('abierto');
+  aside.classList.toggle('abierto', abierto);
+  document.getElementById('btn-menu').setAttribute('aria-expanded', abierto);
+}
 

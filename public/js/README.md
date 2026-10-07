@@ -14,7 +14,7 @@ navegador carga los archivos tal cual, en el orden de `index.html`.
 | `nucleo/datos.js` | `todo(tabla)` (lectura paginada) y `cargarDatos()` |
 | `nucleo/calculos.js` | Consultas sobre `D` (`gastosDe`, `aportesDe`, `rubro`, …) y todos los cálculos: unidades, CAC y cuotas, análisis, superficies, cierre, honorarios, participación, totales, cajas, proveedores |
 | `nucleo/cotizacion.js` | Dólar de referencia (dolarapi.com) |
-| `nucleo/render.js` | `render()`, `dibujar()`, pestañas y navegación (`verObra`, `verTab`) |
+| `nucleo/render.js` | `render()`, `dibujar()`, pestañas y navegación (`verObra`, `verTab`); `envolverTablas()` y el menú plegable de celular (`tglMenu`) |
 | `nucleo/escritura.js` | `guardar()`, `borrar()` y cambios directos; verifican las filas afectadas |
 | `nucleo/exportar.js` | Exportaciones a Excel |
 | `nucleo/inicio.js` | Arranque: login, sesión, `iniciar()`, registro de manejadores en `window` y tecla Escape. **Se carga último** |

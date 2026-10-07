@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Rendición de cuentas</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#14202B">
 <link rel="icon" href="img/icono-192.png" sizes="192x192" type="image/png">
@@ -88,8 +88,15 @@
     thead{display:table-header-group}
     h2{page-break-after:avoid}
   }
+  .tabla{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:4px}
   @media (max-width:640px){
-    .hoja{padding:20px 16px 28px}
+    .caja{padding:14px 10px 50px;padding-top:max(14px,env(safe-area-inset-top))}
+    .hoja{padding:20px 14px 28px}
+    .cabeza h1{font-size:20px}
+    .kpi{flex-basis:130px}
+    .kpi .v{font-size:17px}
+    th,td{padding:8px 8px}
+    td{font-size:13px}
     .ocultar-chico{display:none}
   }
 </style>
@@ -147,6 +154,13 @@ function fallar(texto, titulo){
   document.getElementById('cargando').classList.add('oculto');
   document.getElementById('contenido').classList.remove('oculto');
   document.getElementById('contenido').innerHTML = armar(d);
+  // Las tablas anchas se desplazan dentro de su recuadro, no la página
+  document.querySelectorAll('#contenido table').forEach(t => {
+    const caja = document.createElement('div');
+    caja.className = 'tabla';
+    t.before(caja);
+    caja.append(t);
+  });
   document.title = `Rendición · ${d.obra.nombre}`;
 })();
 
