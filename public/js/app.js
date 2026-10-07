@@ -35,7 +35,19 @@ const fmtUsd2 = v => 'US$ ' + (+v||0).toLocaleString('es-AR',{minimumFractionDig
 const fmtArs  = v => '$ ' + (+v||0).toLocaleString('es-AR',{maximumFractionDigits:0});
 const fmtPct  = v => (+v||0).toLocaleString('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
 const fecha   = f => { if(!f) return '—'; const [a,m,d]=f.split('-'); return `${d}/${m}/${a}`; };
-const hoy     = () => new Date().toISOString().slice(0,10);
+/* Fechas en hora local. toISOString() las pasa a UTC: en Argentina,
+   después de las 21 h devolvía el día siguiente. */
+const fechaLocal = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const hoy     = () => fechaLocal(new Date());
+/* Suma meses a una fecha AAAA-MM-DD sin desbordar: el 31/01 más un mes
+   es el 28/02 (o 29), no el 3 de marzo. */
+function sumarMeses(f, n){
+  const [a, m, d] = f.split('-').map(Number);
+  const total = (m - 1) + n;
+  const anio = a + Math.floor(total / 12), mes = ((total % 12) + 12) % 12;
+  const ultimo = new Date(anio, mes + 1, 0).getDate();
+  return fechaLocal(new Date(anio, mes, Math.min(d, ultimo)));
+}
 const esc     = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const mesDe   = f => f.slice(0,7);
 const nombreMes = m => { const [a,mm]=m.split('-');
@@ -97,6 +109,13 @@ sb.auth.onAuthStateChange((_evento, sesion) => { if(sesion) iniciar(); });
 async function iniciar(){
   if(perfil) return;
   const { data: sesion } = await sb.auth.getUser();
+  // Sesión vencida o revocada: antes la app fallaba acá y quedaba en blanco.
+  if(!sesion?.user){
+    await sb.auth.signOut();
+    document.getElementById('error-acceso').textContent =
+      'Tu sesión venció. Ingresá de nuevo.';
+    return;
+  }
   const { data: p, error } = await sb.from('perfiles')
     .select('id,nombre,rol').eq('id', sesion.user.id).single();
   if(error || !p){
@@ -117,31 +136,49 @@ async function iniciar(){
 /* =====================================================================
    CARGA DE DATOS
    ===================================================================== */
+/* PostgREST devuelve como máximo 1000 filas por consulta. Se pide por
+   páginas hasta traer todo: sin esto, al pasar las 1000 filas los totales
+   quedaban incompletos sin ningún aviso. La clave primaria se agrega al
+   final del orden para que las páginas no se pisen. */
+const PAGINA = 1000;
+const CLAVE = { presupuestos:['obra_id','rubro_id'], fichas:['obra_id'], analisis:['obra_id'] };
+async function todo(tabla, armar = q => q){
+  const filas = [];
+  for(let desde = 0; ; desde += PAGINA){
+    let q = armar(sb.from(tabla).select('*'));
+    for(const c of CLAVE[tabla] || ['id']) q = q.order(c);
+    const { data, error } = await q.range(desde, desde + PAGINA - 1);
+    if(error) return { data: null, error };
+    filas.push(...data);
+    if(data.length < PAGINA) return { data: filas, error: null };
+  }
+}
+
 async function cargarDatos(){
   const t = [
-    sb.from('obras').select('*').order('creado_en'),
-    sb.from('rubros').select('*').eq('activo', true).order('orden'),
-    sb.from('cajas').select('*').eq('activa', true).order('orden'),
-    sb.from('clases').select('*'),
-    sb.from('presupuestos').select('*'),
-    sb.from('inversores').select('*').order('nombre'),
-    sb.from('aportes').select('*').order('fecha'),
-    sb.from('comprobantes').select('*').order('fecha'),
-    sb.from('avances').select('*').order('fecha'),
-    sb.from('documentos').select('*').order('fecha'),
-    sb.from('cierres').select('*').order('hasta'),
-    sb.from('participaciones').select('*'),
-    sb.from('ventas').select('*').order('fecha'),
-    sb.from('fichas').select('*'),
-    sb.from('proveedores').select('*').order('nombre'),
-    sb.from('pedidos').select('*').order('fecha'),
-    sb.from('pedido_respuestas').select('*'),
-    sb.from('analisis').select('*'),
-    sb.from('niveles').select('*').order('orden'),
-    sb.from('indices').select('*').order('periodo'),
-    sb.from('cuotas').select('*').order('numero'),
-    sb.from('enlaces').select('*').order('creado_en'),
-    sb.from('unidades').select('*').order('orden')
+    todo('obras', q => q.order('creado_en')),
+    todo('rubros', q => q.eq('activo', true).order('orden')),
+    todo('cajas', q => q.eq('activa', true).order('orden')),
+    todo('clases'),
+    todo('presupuestos'),
+    todo('inversores', q => q.order('nombre')),
+    todo('aportes', q => q.order('fecha')),
+    todo('comprobantes', q => q.order('fecha')),
+    todo('avances', q => q.order('fecha')),
+    todo('documentos', q => q.order('fecha')),
+    todo('cierres', q => q.order('hasta')),
+    todo('participaciones'),
+    todo('ventas', q => q.order('fecha')),
+    todo('fichas'),
+    todo('proveedores', q => q.order('nombre')),
+    todo('pedidos', q => q.order('fecha')),
+    todo('pedido_respuestas'),
+    todo('analisis'),
+    todo('niveles', q => q.order('orden')),
+    todo('indices', q => q.order('periodo')),
+    todo('cuotas', q => q.order('numero')),
+    todo('enlaces', q => q.order('creado_en')),
+    todo('unidades', q => q.order('orden'))
   ];
   const r = await Promise.all(t);
   const malo = r.find(x => x.error);
@@ -2018,8 +2055,9 @@ function formCierre(){
 
 async function reabrirCierre(id, hasta){
   if(!confirm(`Reabrir el período cerrado hasta ${fecha(hasta)}? Los movimientos vuelven a ser editables. La reapertura queda registrada.`)) return;
-  const { error } = await sb.from('cierres').delete().eq('id', id);
+  const { data, error } = await sb.from('cierres').delete().eq('id', id).select('id');
   if(error) return aviso('No se pudo reabrir: ' + error.message, true);
+  if(!data?.length) return aviso(SIN_EFECTO, true);
   aviso('Período reabierto');
   await cargarDatos();
 }
@@ -2069,13 +2107,13 @@ function formEnlace(){
   const invObra = partsDe(o.id).map(p=>inv(p.inversor_id)).filter(Boolean)
     .sort((a,b)=>a.nombre.localeCompare(b.nombre));
   if(!invObra.length) return alert('Primero sumá inversores a esta obra.');
-  const enTres = new Date(); enTres.setMonth(enTres.getMonth()+3);
+  const enTres = sumarMeses(hoy(), 3);
 
   modal('Generar enlace de rendición', `
     <div class="campo ancho"><label for="en-inv">Inversor</label>
       <select id="en-inv">${invObra.map(i=>`<option value="${i.id}">${esc(i.nombre)}</option>`).join('')}</select></div>
     <div class="campo"><label for="en-vence">Vence el</label>
-      <input id="en-vence" type="date" value="${enTres.toISOString().slice(0,10)}"></div>
+      <input id="en-vence" type="date" value="${enTres}"></div>
     <div class="campo"><label for="en-titulo">Referencia</label>
       <input id="en-titulo" placeholder="Opcional"></div>
     <div class="campo ancho"><span class="ayuda">Dejá la fecha vacía si querés que no venza.
@@ -2283,9 +2321,7 @@ function formPlan(ventaId){
       const cuota = Math.round(saldoReal / cant * 100) / 100;
       const filas = [];
       for(let i = 1; i <= cant; i++){
-        const d = new Date(primera + 'T00:00:00');
-        d.setMonth(d.getMonth() + (i-1));
-        filas.push({ venta_id: v.id, numero: i, vencimiento: d.toISOString().slice(0,10),
+        filas.push({ numero: i, vencimiento: sumarMeses(primera, i - 1),
           // la última absorbe el redondeo
           monto_base: i === cant ? Math.round((saldoReal - cuota*(cant-1))*100)/100 : cuota,
           moneda: v.modalidad === 'cuotas_usd' ? 'USD' : 'ARS' });
@@ -2293,12 +2329,12 @@ function formPlan(ventaId){
       document.getElementById('ok').disabled = true;
       cerrar();
 
-      const cambios = { anticipo: ant, cuotas_cantidad: cant };
-      if(periodoBase){ cambios.periodo_base = periodoBase; cambios.indice_base = cacDe(periodoBase); }
-      const { error: e1 } = await sb.from('ventas').update(cambios).eq('id', v.id);
-      if(e1) return aviso('No se pudo guardar la venta: ' + e1.message, true);
-      const { error: e2 } = await sb.from('cuotas').insert(filas);
-      if(e2) return aviso('No se pudieron crear las cuotas: ' + e2.message, true);
+      // Venta y cuotas en una sola transacción: si algo falla, no queda
+      // una venta con un plan a medias.
+      const { error } = await sb.rpc('generar_plan_cuotas', {
+        p_venta: v.id, p_anticipo: ant, p_cuotas: filas,
+        p_periodo_base: periodoBase, p_indice_base: periodoBase ? cacDe(periodoBase) : null });
+      if(error) return aviso('No se pudo generar el plan: ' + error.message, true);
       aviso(`${cant} cuotas generadas`);
       ventaAbierta = v.id;
       await cargarDatos();
@@ -2622,7 +2658,7 @@ function setMesContador(v){
   else if(v !== 'rango'){
     const [a,m] = v.split('-').map(Number);
     contDesde = v + '-01';
-    contHasta = new Date(a, m, 0).toISOString().slice(0,10);
+    contHasta = fechaLocal(new Date(a, m, 0));
   }
   render();
 }
@@ -3061,13 +3097,13 @@ function vUsuarios(){
 const TABLAS_RESPALDO = ['obras','clases','rubros','presupuestos','cajas',
   'inversores','participaciones','aportes','comprobantes','ventas','avances',
   'documentos','fichas','analisis','niveles','unidades','indices','cuotas','enlaces',
-  'proveedores','pedidos','pedido_respuestas','perfiles'];
+  'proveedores','pedidos','pedido_respuestas','perfiles','cierres','auditoria'];
 
 async function descargarRespaldo(){
   aviso('Armando el respaldo…');
   const copia = { generado: new Date().toISOString(), proyecto: window.CONFIG.url, tablas: {} };
   for(const t of TABLAS_RESPALDO){
-    const { data, error } = await sb.from(t).select('*');
+    const { data, error } = await todo(t);
     if(error){ aviso(`No se pudo leer ${t}: ${error.message}`, true); return; }
     copia.tablas[t] = data;
   }
@@ -3116,7 +3152,7 @@ function formUsuario(){
       </select></div>
     <div class="campo ancho" id="wrap-pass" style="display:none">
       <label for="u-pass">Contraseña inicial</label>
-      <input id="u-pass" type="text" placeholder="mínimo 8 caracteres">
+      <input id="u-pass" type="password" autocomplete="new-password" placeholder="mínimo 8 caracteres">
       <span class="ayuda">Se la pasás vos por otro medio y conviene que la cambie al entrar.</span></div>
     <div class="campo ancho"><span class="ayuda">Con invitación la persona elige su propia
       contraseña y vos nunca la ves. Es la opción recomendada.</span></div>`,
@@ -3174,6 +3210,8 @@ async function eliminarUsuario(id, nombre){
 /* =====================================================================
    ESCRITURA
    ===================================================================== */
+const SIN_EFECTO = 'No se hizo ningún cambio: tu usuario no tiene permiso o el registro ya no existe.';
+
 async function guardar(tabla, datos, id){
   if('nombre' in datos && !String(datos.nombre||'').trim()){
     aviso('No se guardó: el nombre quedó vacío.', true);
@@ -3181,16 +3219,20 @@ async function guardar(tabla, datos, id){
   }
   const q = id ? sb.from(tabla).update(datos).eq('id', id)
                : sb.from(tabla).insert(datos);
-  const { error } = await q;
+  // .select() devuelve las filas afectadas. Si el RLS no deja tocar el
+  // registro, la base no da error: simplemente no afecta ninguna fila.
+  const { data, error } = await q.select('id');
   if(error){ aviso('No se pudo guardar: ' + error.message, true); return false; }
+  if(!data?.length){ aviso(SIN_EFECTO, true); return false; }
   aviso('Guardado');
   await cargarDatos();
   return true;
 }
 async function borrar(tabla, id){
   if(!confirm('¿Eliminar este registro? No se puede deshacer.')) return;
-  const { error } = await sb.from(tabla).delete().eq('id', id);
+  const { data, error } = await sb.from(tabla).delete().eq('id', id).select('id');
   if(error){ aviso('No se pudo eliminar: ' + error.message, true); return; }
+  if(!data?.length){ aviso(SIN_EFECTO, true); return; }
   aviso('Eliminado');
   await cargarDatos();
 }
@@ -3491,8 +3533,9 @@ function tglNuevoInversor(){
 }
 async function quitarDeObra(id, nombre){
   if(!confirm(`Quitar a ${nombre} de esta obra? La ficha del inversor se conserva y sus aportes en otras obras no se tocan.`)) return;
-  const { error } = await sb.from('participaciones').delete().eq('id', id);
+  const { data, error } = await sb.from('participaciones').delete().eq('id', id).select('id');
   if(error) return aviso('No se pudo quitar: ' + error.message, true);
+  if(!data?.length) return aviso(SIN_EFECTO, true);
   aviso('Quitado de la obra');
   await cargarDatos();
 }
@@ -3551,8 +3594,9 @@ function renombrarGrupo(actual){
       if(!nuevo) return err('Poné un nombre.');
       if(nuevo === actual) return cerrar();
       cerrar();
-      const { error } = await sb.from('rubros').update({ grupo:nuevo }).eq('grupo', actual);
+      const { data, error } = await sb.from('rubros').update({ grupo:nuevo }).eq('grupo', actual).select('id');
       if(error) return aviso('No se pudo renombrar: ' + error.message, true);
+      if(!data?.length) return aviso(SIN_EFECTO, true);
       aviso('Grupo renombrado');
       await cargarDatos();
     });
@@ -3641,8 +3685,9 @@ async function eliminarObra(){
   const o = obra();
   const n = gastosDe(o.id).length + aportesDe(o.id).length;
   if(!confirm(`"${o.nombre}" tiene ${n} movimiento${n===1?'':'s'}. Se borra todo. ¿Seguir?`)) return;
-  const { error } = await sb.from('obras').delete().eq('id', o.id);
+  const { data, error } = await sb.from('obras').delete().eq('id', o.id).select('id');
   if(error) return aviso('No se pudo eliminar: ' + error.message, true);
+  if(!data?.length) return aviso(SIN_EFECTO, true);
   obraActiva = null; aviso('Obra eliminada'); await cargarDatos();
 }
 
