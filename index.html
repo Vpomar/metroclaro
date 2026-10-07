@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Administración de obras</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14202B">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icono-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Obras">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<!-- Pantalla de acceso -->
+<div id="acceso" class="acceso">
+  <div class="marca-acceso">
+    <div class="logo"><b>metro</b><i>claro</i></div>
+    <p>La gestión de tu obra, simple.</p>
+  </div>
+  <form class="tarjeta-acceso" id="form-acceso" autocomplete="on">
+    <h1>Administración de obras</h1>
+    <p class="pie" id="pie-instancia">Ingresá con tu cuenta para continuar.</p>
+    <div class="campo">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" required>
+    </div>
+    <div class="campo">
+      <label for="clave">Contraseña</label>
+      <input id="clave" type="password" autocomplete="current-password" required>
+    </div>
+    <p class="error" id="error-acceso"></p>
+    <button class="btn" type="submit" id="btn-entrar">Entrar</button>
+    <p class="pie" id="pie-acceso"></p>
+  </form>
+  <p class="pie-marca">metroclaro · Estudio Pomar Di Lorenzo</p>
+</div>
+
+<!-- Aplicación -->
+<div class="app oculto" id="app">
+  <aside>
+    <h1><span class="logo"><b>metro</b><i>claro</i></span><span id="sub-obras">—</span></h1>
+    <div class="grupo">
+      <button class="obra-btn" id="btn-ver-panel" onclick="verTab('panel')">
+        <span>Panel general</span></button>
+      <p class="grupo-tit" style="margin-top:14px">Obras</p>
+      <div id="lista-obras"></div>
+      <button class="link solo-equipo" style="margin:8px 8px 0" onclick="nuevaObra()">Agregar obra</button>
+    </div>
+    <div class="cotiz">
+      <label for="cotiz">Dólar de referencia</label>
+      <input id="cotiz" type="number" min="0" step="0.01" onchange="setCotiz(this.value)">
+      <p class="fuente" id="fuente-cotiz">—</p>
+      <p class="fuente" id="quien"></p>
+      <button class="link" onclick="salir()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="barra">
+      <div class="titulo-fila">
+        <button class="link" id="btn-panel" onclick="verTab('panel')">← Panel</button>
+        <h2 id="titulo">—</h2>
+        <button class="link solo-equipo" id="btn-renombrar" onclick="renombrarObra()">Renombrar</button>
+        <button class="link solo-admin" id="btn-borrar-obra" onclick="eliminarObra()">Eliminar obra</button>
+      </div>
+      <div class="tabs" id="tabs"></div>
+    </div>
+    <div class="cuerpo" id="cuerpo"></div>
+  </main>
+</div>
+
+<div id="modal-host"></div>
+<div id="aviso" class="aviso-flotante oculto"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+  if('serviceWorker' in navigator)
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>

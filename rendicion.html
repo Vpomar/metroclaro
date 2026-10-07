@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Rendición de cuentas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#14202B">
+<link rel="icon" href="icono-192.png" sizes="192x192" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tinta:#14202B; --papel:#F5F4F0; --blanco:#FFFFFF; --linea:#DAD7CE;
+    --linea-fuerte:#B9B5A9; --azul:#2E5C7A; --verde:#3C7355; --ambar:#B9822A;
+    --rojo:#9E3B2E; --gris:#6C7480;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papel);color:var(--tinta);
+    font-family:'Archivo',system-ui,sans-serif;font-size:14px;line-height:1.45;
+    font-variant-numeric:tabular-nums}
+  .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .caja{max-width:900px;margin:0 auto;padding:26px 20px 70px}
+
+  .cargando,.mal{min-height:70vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;gap:10px;padding:24px}
+  .mal h1{font-size:19px;margin:0}
+  .mal p{color:var(--gris);max-width:420px;margin:0}
+
+  .hoja{background:var(--blanco);border:1px solid var(--linea);border-radius:3px;
+    padding:32px 34px 40px;box-shadow:0 1px 3px rgba(20,32,43,.06)}
+  .cabeza{border-bottom:2.5px solid var(--tinta);padding-bottom:18px;margin-bottom:26px;
+    background:url('fondo.svg') no-repeat right -34px bottom -20px;background-size:auto 104px}
+  .cabeza h1{margin:0 0 6px;font-size:24px;font-weight:700;letter-spacing:-.025em;position:relative}
+  .cabeza p{margin:0;font-size:13.5px;color:var(--gris);position:relative}
+  .cabeza .chico{font-size:11.5px;margin-top:8px}
+
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--gris);
+    border-bottom:1px solid var(--linea);padding-bottom:6px;margin:30px 0 12px}
+  .fila{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .kpi{background:var(--blanco);border:1px solid var(--linea-fuerte);
+    border-top:2px solid var(--azul);border-radius:3px;padding:12px 15px;flex:1 1 150px}
+  .kpi.alerta{border-top-color:var(--rojo)}
+  .kpi .r{font-size:10px;color:var(--gris);text-transform:uppercase;letter-spacing:.06em;
+    font-weight:600;margin:0 0 5px}
+  .kpi .v{font-size:20px;font-weight:600;letter-spacing:-.02em;margin:0}
+  .kpi.alerta .v{color:var(--rojo)}
+  .kpi .s{font-size:11px;color:var(--gris);margin:3px 0 0}
+
+  table{width:100%;border-collapse:collapse;background:var(--blanco);
+    border:1px solid var(--linea);border-radius:3px}
+  th{text-align:left;font-size:10.5px;font-weight:600;color:var(--gris);padding:9px 10px;
+    border-bottom:1px solid var(--linea-fuerte);text-transform:uppercase;letter-spacing:.05em}
+  td{padding:9px 10px;border-bottom:1px solid var(--linea);font-size:13.5px}
+  tr:last-child td{border-bottom:0}
+  .der{text-align:right}
+  .grupo td{background:#EFEDE7;font-size:11.5px;font-weight:600;color:var(--gris)}
+  .medida{height:8px;background:#EDEBE5;border:1px solid var(--linea);border-radius:2px;
+    position:relative;overflow:hidden;min-width:90px}
+  .medida i{position:absolute;inset:0 auto 0 0;background:var(--azul);display:block}
+  .medida.excedido i{background:var(--rojo)}
+  .pct{font-size:11px;color:var(--gris);margin:3px 0 0}
+  .chip{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:20px;
+    background:#E4EDF2;color:var(--azul);font-weight:500}
+  .chip.v{background:#E6EFE9;color:var(--verde)}
+  .chip.a{background:#F6EEDC;color:var(--ambar)}
+  .chip.r{background:#F5E4E1;color:var(--rojo)}
+
+  .galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+  .foto{border:1px solid var(--linea);border-radius:3px;overflow:hidden;background:#EDEBE5}
+  .foto img{width:100%;height:150px;object-fit:cover;display:block}
+  .foto div{padding:8px 10px;background:var(--blanco)}
+  .foto strong{font-size:13px}
+
+  .pie{margin-top:34px;padding-top:16px;border-top:1px solid var(--linea);
+    font-size:11.5px;color:var(--gris);text-align:center}
+  .btn{background:var(--tinta);color:#fff;border:0;font:inherit;font-size:13.5px;
+    font-weight:500;padding:9px 17px;border-radius:3px;cursor:pointer}
+  .oculto{display:none!important}
+
+  @media print{
+    body{background:#fff}
+    .caja{padding:0;max-width:none}
+    .hoja{border:0;padding:0;box-shadow:none}
+    .no-imprimir{display:none!important}
+    tr{page-break-inside:avoid}
+    thead{display:table-header-group}
+    h2{page-break-after:avoid}
+  }
+  @media (max-width:640px){
+    .hoja{padding:20px 16px 28px}
+    .ocultar-chico{display:none}
+  }
+</style>
+</head>
+<body>
+
+<script src="config.js"></script>
+
+<div id="cargando" class="cargando">
+  <p style="color:var(--gris)">Armando la rendición…</p>
+</div>
+
+<div id="error" class="mal oculto">
+  <h1 id="error-titulo">No pudimos abrir la rendición</h1>
+  <p id="error-texto"></p>
+</div>
+
+<div id="contenido" class="caja oculto"></div>
+
+<script>
+const F = {
+  usd:  v => 'US$ ' + (+v||0).toLocaleString('es-AR',{maximumFractionDigits:0}),
+  usd2: v => 'US$ ' + (+v||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}),
+  ars:  v => '$ ' + (+v||0).toLocaleString('es-AR',{maximumFractionDigits:0}),
+  pct:  v => (+v||0).toLocaleString('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%',
+  fecha: f => { if(!f) return '—'; const [a,m,d] = f.split('-'); return `${d}/${m}/${a}`; }
+};
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function fallar(texto, titulo){
+  document.getElementById('cargando').classList.add('oculto');
+  document.getElementById('error').classList.remove('oculto');
+  if(titulo) document.getElementById('error-titulo').textContent = titulo;
+  document.getElementById('error-texto').textContent = texto;
+}
+
+(async () => {
+  if(!window.CONFIG) return fallar('Falta la configuración del sistema.');
+  const token = new URLSearchParams(location.search).get('t');
+  if(!token) return fallar('El enlace está incompleto. Pedí uno nuevo a quien administra la obra.');
+
+  let d;
+  try {
+    const r = await fetch(`${window.CONFIG.url}/functions/v1/rendicion`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': window.CONFIG.key },
+      body: JSON.stringify({ token })
+    });
+    d = await r.json();
+    if(d.error) return fallar(d.error, 'Enlace no disponible');
+  } catch(e) {
+    return fallar('No pudimos conectarnos. Probá de nuevo en un rato.');
+  }
+
+  document.getElementById('cargando').classList.add('oculto');
+  document.getElementById('contenido').classList.remove('oculto');
+  document.getElementById('contenido').innerHTML = armar(d);
+  document.title = `Rendición · ${d.obra.nombre}`;
+})();
+
+function armar(d){
+  const clase = l => d.clases.find(c => c.letra === l) || { nombre:'Cuota '+l, coeficiente:1 };
+  const coef  = l => +clase(l).coeficiente || 1;
+
+  // Posición del inversor, en unidades de participación
+  const unid = a => +a.usd * coef(a.clase === 'B' ? 'B' : 'A');
+  const totalUnid = d.aportes.reduce((s,a)=>s+unid(a), 0);
+  const misUnid   = d.mis_aportes.reduce((s,a)=>s+unid(a), 0);
+  const integrado = d.mis_aportes.reduce((s,a)=>s+ +a.usd, 0);
+  const totalAportes = d.aportes.reduce((s,a)=>s+ +a.usd, 0);
+  const participacion = totalUnid ? misUnid/totalUnid*100 : 0;
+  const suscripto = (+d.participacion.comp_a||0) + (+d.participacion.comp_b||0);
+  const unidades = [...new Set(d.mis_aportes.map(a=>a.unidad).filter(Boolean))];
+
+  // Estado de la obra
+  const ejecutado = d.comprobantes.reduce((s,c)=>s+ +c.usd, 0);
+  const pagado    = d.comprobantes.filter(c=>c.pago==='pagado').reduce((s,c)=>s+ +c.usd, 0);
+  const deuda     = ejecutado - pagado;
+  const presu = r => +(d.presupuestos.find(p=>p.rubro_id===r)?.monto_usd || 0);
+  const ejec  = r => d.comprobantes.filter(c=>c.rubro_id===r).reduce((s,c)=>s+ +c.usd, 0);
+  const presupuesto = d.rubros.reduce((s,r)=>s+presu(r.id), 0);
+  const avance = presupuesto ? ejecutado/presupuesto*100 : 0;
+
+  // Rubros con movimiento
+  let grupo = null, filasRubro = '';
+  d.rubros.forEach(r => {
+    const p = presu(r.id), e = ejec(r.id);
+    if(!p && !e) return;
+    if(r.grupo !== grupo){ grupo = r.grupo;
+      filasRubro += `<tr class="grupo"><td colspan="4">${esc(grupo)}</td></tr>`; }
+    const pc = p ? e/p*100 : 0;
+    filasRubro += `<tr><td>${esc(r.nombre)}</td>
+      <td class="der num">${p?F.usd(p):'—'}</td>
+      <td class="der num">${F.usd(e)}</td>
+      <td class="ocultar-chico"><div class="medida ${p&&e>p?'excedido':''}">
+        <i style="width:${Math.min(pc,100)}%"></i></div>
+        <p class="pct">${p?F.pct(pc):'sin presupuesto'}</p></td></tr>`;
+  });
+
+  const emitido = new Date(d.emitido);
+
+  return `
+  <div class="hoja">
+    <div class="cabeza">
+      <h1>${esc(d.obra.nombre)}</h1>
+      <p>Rendición de cuentas · ${esc(d.inversor.nombre)}</p>
+      <p class="chico">Emitida el ${emitido.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}.
+        Importes en dólares, cada movimiento valuado a la cotización de su fecha.</p>
+    </div>
+
+    <h2>Su posición</h2>
+    <div class="fila">
+      <div class="kpi"><p class="r">Capital integrado</p><p class="v num">${F.usd(integrado)}</p>
+        <p class="s">${d.mis_aportes.length} aporte${d.mis_aportes.length===1?'':'s'}</p></div>
+      <div class="kpi"><p class="r">Participación</p><p class="v num">${F.pct(participacion)}</p>
+        <p class="s">sobre ${F.usd(totalAportes)} aportados por todos</p></div>
+      ${suscripto ? `<div class="kpi ${suscripto>integrado?'alerta':''}">
+        <p class="r">Pendiente de integrar</p>
+        <p class="v num">${F.usd(Math.max(suscripto-integrado,0))}</p>
+        <p class="s">sobre ${F.usd(suscripto)} suscriptos</p></div>` : ''}
+      ${unidades.length ? `<div class="kpi"><p class="r">Unidad</p>
+        <p class="v" style="font-size:17px">${unidades.map(esc).join(' · ')}</p></div>` : ''}
+    </div>
+
+    ${d.mis_aportes.length ? `<table><thead><tr><th>Fecha</th><th>Clase</th>
+      <th class="ocultar-chico">Unidad</th><th class="der">Importe original</th>
+      <th class="der ocultar-chico">Cotización</th><th class="der">En USD</th></tr></thead><tbody>
+      ${d.mis_aportes.slice().sort((a,b)=>a.fecha.localeCompare(b.fecha)).map(a=>`<tr>
+        <td class="num">${F.fecha(a.fecha)}</td>
+        <td>${esc(clase(a.clase==='B'?'B':'A').nombre)}</td>
+        <td class="ocultar-chico">${esc(a.unidad||'—')}</td>
+        <td class="der num">${a.moneda==='USD'?F.usd2(a.importe):F.ars(a.importe)}</td>
+        <td class="der num ocultar-chico">${a.moneda==='ARS'||+a.cotizacion>1
+          ? (+a.cotizacion).toLocaleString('es-AR',{maximumFractionDigits:2}) : '—'}</td>
+        <td class="der num" style="font-weight:600">${F.usd2(a.usd)}</td></tr>`).join('')}
+      <tr><td colspan="5"><strong>Total integrado</strong></td>
+        <td class="der num"><strong>${F.usd2(integrado)}</strong></td></tr>
+    </tbody></table>` : ''}
+
+    ${d.cuotas.length ? (() => {
+      const v = d.ventas[0] || {};
+      const cobradas = d.cuotas.filter(c=>c.estado==='cobrada');
+      const pend = d.cuotas.filter(c=>c.estado!=='cobrada');
+      const mon = x => v.modalidad === 'cuotas_usd' ? F.usd2(x) : F.ars(x);
+      const hoy = new Date().toISOString().slice(0,10);
+      return `<h2>Su plan de pagos</h2>
+      <table><thead><tr><th>Cuota</th><th>Vence</th><th class="der">Importe</th>
+        <th>Estado</th></tr></thead><tbody>
+        ${d.cuotas.slice().sort((a,b)=>a.numero-b.numero).map(c=>{
+          const venc = c.estado!=='cobrada' && c.vencimiento < hoy;
+          return `<tr><td class="num">${c.numero}</td>
+            <td class="num" style="${venc?'color:var(--rojo);font-weight:600':''}">${F.fecha(c.vencimiento)}</td>
+            <td class="der num">${mon(c.estado==='cobrada'?c.monto_cobrado:c.monto_base)}</td>
+            <td>${c.estado==='cobrada'?'<span class="chip v">Cobrada</span>'
+              : venc?'<span class="chip r">Vencida</span>':'<span class="chip a">Pendiente</span>'}</td>
+          </tr>`;}).join('')}
+        <tr><td colspan="2"><strong>${cobradas.length} de ${d.cuotas.length} cobradas</strong></td>
+          <td class="der num"><strong>${mon(cobradas.reduce((s,c)=>s+ +c.monto_cobrado||0,0))}</strong></td>
+          <td><span class="pct">${pend.length} pendiente${pend.length===1?'':'s'}</span></td></tr>
+      </tbody></table>
+      ${v.modalidad==='cuotas_cac'?`<p class="pct" style="margin-top:8px">
+        Las cuotas pendientes se ajustan por el índice de la Cámara Argentina de la Construcción.
+        El importe definitivo se determina al momento del pago.</p>`:''}`;
+    })() : ''}
+
+    <h2>Estado de la obra</h2>
+    <div class="fila">
+      ${presupuesto?`<div class="kpi"><p class="r">Presupuesto</p>
+        <p class="v num">${F.usd(presupuesto)}</p></div>`:''}
+      <div class="kpi"><p class="r">Ejecutado</p><p class="v num">${F.usd(ejecutado)}</p>
+        ${presupuesto?`<p class="s">${F.pct(avance)} del presupuesto</p>`:''}</div>
+      <div class="kpi"><p class="r">Aportes recibidos</p><p class="v num">${F.usd(totalAportes)}</p></div>
+      ${deuda>0?`<div class="kpi"><p class="r">Deuda a proveedores</p>
+        <p class="v num">${F.usd(deuda)}</p></div>`:''}
+      <div class="kpi"><p class="r">Disponible neto</p>
+        <p class="v num">${F.usd(totalAportes - ejecutado)}</p>
+        <p class="s">aportes menos ejecutado</p></div>
+    </div>
+
+    ${filasRubro ? `<h2>Ejecución por rubro</h2>
+    <table><thead><tr><th>Rubro</th><th class="der">Presupuesto</th>
+      <th class="der">Ejecutado</th><th class="ocultar-chico" style="width:140px">Avance</th>
+      </tr></thead><tbody>${filasRubro}
+      <tr><td><strong>Total</strong></td>
+        <td class="der num"><strong>${F.usd(presupuesto)}</strong></td>
+        <td class="der num"><strong>${F.usd(ejecutado)}</strong></td>
+        <td class="ocultar-chico"></td></tr>
+    </tbody></table>` : ''}
+
+    ${d.avances.length ? `<h2>Avance de obra</h2>
+    <div class="galeria">
+      ${d.avances.filter(a=>a.url).map(a=>`<div class="foto">
+        <img loading="lazy" src="${a.url}" alt="${esc(a.titulo||'Avance')}">
+        <div><strong>${esc(a.titulo||'Avance')}</strong>
+          <p class="pct">${F.fecha(a.fecha)}${a.pct_avance!=null?` · ${F.pct(a.pct_avance)}`:''}</p>
+        </div></div>`).join('')}
+    </div>` : ''}
+
+    ${d.comprobantes.length ? `<h2>Detalle de gastos</h2>
+    <table><thead><tr><th>Fecha</th><th>Proveedor</th><th class="ocultar-chico">Detalle</th>
+      <th>Rubro</th><th class="der">Importe</th></tr></thead><tbody>
+      ${d.comprobantes.map(c=>`<tr><td class="num">${F.fecha(c.fecha)}</td>
+        <td>${esc(c.proveedor)}</td>
+        <td class="ocultar-chico">${esc(c.detalle||'—')}</td>
+        <td>${esc(d.rubros.find(r=>r.id===c.rubro_id)?.nombre||'—')}
+          ${c.pago!=='pagado'?' <span class="chip a">impaga</span>':''}</td>
+        <td class="der num">${F.usd2(c.usd)}</td></tr>`).join('')}
+      <tr><td colspan="4"><strong>Total ejecutado</strong></td>
+        <td class="der num"><strong>${F.usd2(ejecutado)}</strong></td></tr>
+    </tbody></table>` : ''}
+
+    <div class="pie">
+      <button class="btn no-imprimir" onclick="window.print()">Imprimir o guardar en PDF</button>
+      <p style="margin-top:14px">Esta rendición es de solo lectura y se actualiza sola.
+        Guardá el enlace para volver a consultarla.<br>
+        Ante cualquier duda, comunicate con quien administra la obra.</p>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

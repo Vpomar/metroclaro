@@ -1,0 +1,27 @@
+# Respaldos: contienen datos reales de obras e inversores. Nunca al repo.
+respaldo-*/
+respaldo-*.json
+respaldo-*.sql
+respaldos/
+
+# Secretos y entornos locales
+.env
+.env.*
+!.env.example
+supabase/.temp/
+supabase/.branches/
+
+# Dependencias y artefactos
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# Herramientas locales
+.claude/settings.local.json
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db

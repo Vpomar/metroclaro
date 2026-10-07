@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Verificar respaldo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--tinta:#14202B;--papel:#F5F4F0;--blanco:#fff;--linea:#DAD7CE;--linea-fuerte:#B9B5A9;
+        --azul:#2E5C7A;--verde:#3C7355;--ambar:#B9822A;--rojo:#9E3B2E;--gris:#6C7480}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papel);color:var(--tinta);
+    font-family:'Archivo',system-ui,sans-serif;font-size:14px;line-height:1.45;
+    font-variant-numeric:tabular-nums;padding:28px 22px 60px}
+  .caja{max-width:880px;margin:0 auto}
+  h1{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0 0 4px}
+  .sub{color:var(--gris);font-size:13px;margin:0 0 22px}
+  .zona{border:2px dashed var(--linea-fuerte);border-radius:4px;background:var(--blanco);
+    padding:34px 20px;text-align:center;cursor:pointer}
+  .zona.encima{border-color:var(--azul);background:#E4EDF2}
+  .zona input{display:none}
+  .zona strong{display:block;font-size:15px;margin-bottom:4px}
+  .zona span{color:var(--gris);font-size:12.5px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--gris);
+    border-bottom:1px solid var(--linea);padding-bottom:6px;margin:30px 0 10px}
+  table{width:100%;border-collapse:collapse;background:var(--blanco);
+    border:1px solid var(--linea);border-radius:3px}
+  th{text-align:left;font-size:10.5px;font-weight:600;color:var(--gris);padding:9px 10px;
+    border-bottom:1px solid var(--linea-fuerte);text-transform:uppercase;letter-spacing:.05em}
+  td{padding:9px 10px;border-bottom:1px solid var(--linea);font-size:13.5px}
+  tr:last-child td{border-bottom:0}
+  .der{text-align:right}
+  .fila{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .kpi{background:var(--blanco);border:1px solid var(--linea);border-top:3px solid var(--azul);
+    border-radius:3px;padding:14px 16px;flex:1 1 170px}
+  .kpi.mal{border-top-color:var(--rojo)}
+  .kpi .r{font-size:10.5px;color:var(--gris);text-transform:uppercase;letter-spacing:.06em;
+    font-weight:600;margin:0 0 6px}
+  .kpi .v{font-size:25px;font-weight:700;letter-spacing:-.03em;margin:0}
+  .kpi.mal .v{color:var(--rojo)}
+  .chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;
+    background:#E6EFE9;color:var(--verde);font-weight:500}
+  .chip.a{background:#F6EEDC;color:var(--ambar)}
+  .chip.r{background:#F5E4E1;color:var(--rojo)}
+  .aviso{background:#F5E4E1;border:1px solid #E0B4AB;border-radius:3px;padding:12px 15px;
+    color:#7A2E24;font-size:13px;margin-top:14px}
+  .pct{font-size:11.5px;color:var(--gris);margin:3px 0 0}
+</style>
+</head>
+<body>
+<div class="caja">
+  <h1>Verificar respaldo</h1>
+  <p class="sub">Abrí el archivo <code>respaldo-obras-fecha.json</code> que descargaste desde la
+  pestaña Usuarios. Nada se envía a ningún lado: se lee en tu propia computadora.</p>
+
+  <label class="zona" id="zona">
+    <input type="file" id="archivo" accept="application/json">
+    <strong>Elegí el archivo o arrastralo acá</strong>
+    <span>respaldo-obras-2026-09-07.json</span>
+  </label>
+
+  <div id="salida"></div>
+</div>
+
+<script>
+const zona = document.getElementById('zona');
+const salida = document.getElementById('salida');
+const n = v => (v||0).toLocaleString('es-AR');
+const usd = v => 'US$ ' + Math.round(v||0).toLocaleString('es-AR');
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+document.getElementById('archivo').addEventListener('change', e => leer(e.target.files[0]));
+['dragover','dragenter'].forEach(ev => zona.addEventListener(ev, e => {
+  e.preventDefault(); zona.classList.add('encima'); }));
+['dragleave','drop'].forEach(ev => zona.addEventListener(ev, e => {
+  e.preventDefault(); zona.classList.remove('encima'); }));
+zona.addEventListener('drop', e => leer(e.dataTransfer.files[0]));
+
+function leer(f){
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try { analizar(JSON.parse(r.result), f); }
+    catch(e){ salida.innerHTML = `<div class="aviso"><strong>No se pudo leer el archivo.</strong>
+      <br>${esc(e.message)}<br>Verificá que sea el JSON que descarga la aplicación.</div>`; }
+  };
+  r.readAsText(f);
+}
+
+function analizar(d, f){
+  const t = d.tablas || {};
+  const obras = t.obras || [], comp = t.comprobantes || [], ap = t.aportes || [];
+  const ventas = t.ventas || [], inv = t.inversores || [];
+
+  const totalFilas = Object.values(t).reduce((s,x)=>s+(x?.length||0),0);
+  const ejecutado = comp.filter(c=>c.afecta_caja !== false).reduce((s,c)=>s+ +c.usd,0);
+  const aportado  = ap.reduce((s,a)=>s+ +a.usd,0);
+
+  // Referencias que apuntan a registros inexistentes
+  const ids = k => new Set((t[k]||[]).map(x=>x.id));
+  const idObras = ids('obras'), idInv = ids('inversores'),
+        idCajas = ids('cajas'), idRubros = ids('rubros');
+  const rotas = [];
+  const revisar = (tabla, campo, conjunto, nombre) =>
+    (t[tabla]||[]).forEach(x => { if(x[campo] && !conjunto.has(x[campo]))
+      rotas.push(`${tabla}: ${nombre} inexistente`); });
+  revisar('comprobantes','obra_id',idObras,'obra');
+  revisar('comprobantes','caja_id',idCajas,'caja');
+  revisar('comprobantes','rubro_id',idRubros,'rubro');
+  revisar('aportes','obra_id',idObras,'obra');
+  revisar('aportes','inversor_id',idInv,'inversor');
+  revisar('participaciones','inversor_id',idInv,'inversor');
+  const resumenRotas = [...new Set(rotas)].map(x=>`${x} (${rotas.filter(y=>y===x).length})`);
+
+  const dias = d.generado
+    ? Math.floor((Date.now() - new Date(d.generado).getTime())/86400000) : null;
+
+  const ORDEN = ['obras','clases','rubros','presupuestos','cajas','inversores','participaciones',
+    'aportes','comprobantes','ventas','avances','documentos','perfiles'];
+  const tablas = ORDEN.filter(k => k in t).concat(Object.keys(t).filter(k=>!ORDEN.includes(k)));
+
+  salida.innerHTML = `
+  <div class="fila" style="margin-top:26px">
+    <div class="kpi"><p class="r">Generado</p>
+      <p class="v" style="font-size:19px">${d.generado ? new Date(d.generado).toLocaleDateString('es-AR') : '—'}</p>
+      <p class="pct">${dias === null ? '' : dias === 0 ? 'hoy' : `hace ${dias} día${dias===1?'':'s'}`}</p></div>
+    <div class="kpi"><p class="r">Registros</p><p class="v">${n(totalFilas)}</p>
+      <p class="pct">${tablas.length} tablas</p></div>
+    <div class="kpi"><p class="r">Obras</p><p class="v">${n(obras.length)}</p></div>
+    <div class="kpi ${resumenRotas.length?'mal':''}"><p class="r">Integridad</p>
+      <p class="v" style="font-size:19px">${resumenRotas.length ? 'Con avisos' : 'Correcta'}</p>
+      <p class="pct">${resumenRotas.length ? 'referencias rotas' : 'sin referencias rotas'}</p></div>
+  </div>
+
+  ${dias !== null && dias > 45 ? `<div class="aviso">
+    <strong>Este respaldo tiene ${dias} días.</strong> Conviene bajar uno nuevo.</div>` : ''}
+
+  ${resumenRotas.length ? `<div class="aviso"><strong>Hay referencias que no cierran.</strong>
+    <br>${resumenRotas.map(esc).join('<br>')}
+    <br>No siempre es un problema: puede venir de registros borrados a propósito.</div>` : ''}
+
+  <h2>Contenido</h2>
+  <table><thead><tr><th>Tabla</th><th class="der">Registros</th><th>Estado</th></tr></thead><tbody>
+    ${tablas.map(k=>`<tr><td>${esc(k)}</td>
+      <td class="der">${n((t[k]||[]).length)}</td>
+      <td>${(t[k]||[]).length ? '<span class="chip">con datos</span>'
+        : '<span class="chip a">vacía</span>'}</td></tr>`).join('')}
+  </tbody></table>
+
+  ${obras.length ? `<h2>Obras incluidas</h2>
+  <table><thead><tr><th>Obra</th><th class="der">Comprobantes</th><th class="der">Ejecutado</th>
+    <th class="der">Aportes</th><th class="der">Ventas</th></tr></thead><tbody>
+    ${obras.map(o=>{
+      const c = comp.filter(x=>x.obra_id===o.id);
+      return `<tr><td>${esc(o.nombre)}</td>
+        <td class="der">${n(c.length)}</td>
+        <td class="der">${usd(c.filter(x=>x.afecta_caja!==false).reduce((s,x)=>s+ +x.usd,0))}</td>
+        <td class="der">${usd(ap.filter(x=>x.obra_id===o.id).reduce((s,x)=>s+ +x.usd,0))}</td>
+        <td class="der">${n(ventas.filter(x=>x.obra_id===o.id).length)}</td></tr>`;
+    }).join('')}
+    <tr><td><strong>Total</strong></td><td class="der"><strong>${n(comp.length)}</strong></td>
+      <td class="der"><strong>${usd(ejecutado)}</strong></td>
+      <td class="der"><strong>${usd(aportado)}</strong></td>
+      <td class="der"><strong>${n(ventas.length)}</strong></td></tr>
+  </tbody></table>` : ''}
+
+  ${inv.length ? `<h2>Inversores</h2>
+  <p class="sub">${inv.map(i=>esc(i.nombre)).join(' · ')}</p>` : ''}
+
+  <h2>Qué significa esto</h2>
+  <p class="sub">Que el archivo abre y los números coinciden con lo que ves en la aplicación
+  quiere decir que el respaldo sirve. Compará el ejecutado y los aportes con el Panel:
+  si dan igual, el respaldo está completo.<br><br>
+  Este JSON alcanza para reconstruir la información, pero no restaura la base sola.
+  Para eso está el respaldo con <code>respaldo.bat</code>, que genera un archivo SQL
+  que se restaura de una.</p>`;
+}
+</script>
+</body>
+</html>
