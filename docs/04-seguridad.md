@@ -39,21 +39,24 @@ pueden secuestrar con objetos de otro esquema.
 
 | Tabla | inversor | carga | admin |
 |---|---|---|---|
-| obras, comprobantes, ventas, avances | Lee las de sus obras | Lee, crea y edita | Además borra |
+| Tabla | inversor | carga | admin |
+|---|---|---|---|
+| obras, comprobantes, ventas, avances, cajas, clases, presupuestos, cuotas, fichas, análisis, niveles, unidades, pedidos | Lee las de sus obras | Lee, crea y edita | Además borra |
 | aportes | Solo los suyos | Lee, crea y edita | Además borra |
 | documentos | Los de sus obras; los reservados solo si son suyos | Lee, crea y edita | Además borra |
-| cajas, clases, presupuestos, cuotas, fichas, análisis, niveles, unidades, pedidos | Lee las de sus obras | **Lee, crea, edita y borra** ⚠️ | Lee, crea, edita y borra |
-| participaciones | Las de sus obras | **Lee, crea, edita y borra** ⚠️ | Lee, crea, edita y borra |
-| inversores | Solo su ficha | **Lee, crea, edita y borra** ⚠️ | Lee, crea, edita y borra |
-| rubros, proveedores, índices | Lee | Lee, crea, edita y borra | Lee, crea, edita y borra |
-| enlaces | — | Lee, crea, edita y borra | Lee, crea, edita y borra |
+| participaciones | Las de sus obras | Lee, crea y edita | Además borra |
+| inversores | Solo su ficha | Lee, crea y edita | Además borra |
+| rubros, proveedores, índices | Lee | Lee, crea y edita | Además borra |
+| enlaces | — | Lee, crea y edita (dar de baja es editar) | Además borra |
 | auditoria | — | Lee | Lee |
 | perfiles | Solo el suyo | Solo el suyo | Todos; cambia roles |
 | cierres (cerrar / reabrir) | Lee | Lee | Cierra y reabre |
 
-⚠️ La regla original era "carga no borra", pero las políticas `*_editar` de
-esas tablas son `FOR ALL` y le permiten borrar. Ver el hallazgo N-01 en la
-[auditoría](auditoria-2026-10.md).
+**Regla:** `carga` crea y edita, pero **nunca borra**. Cada tabla tiene
+políticas separadas `*_crear` / `*_editar` (admin y carga) y `*_borrar`
+(solo admin). Las acciones de `carga` que "sacan" algo son en realidad
+ediciones: archivar un rubro, dar de baja un enlace, revertir el cobro de
+una cuota, poner un presupuesto en 0.
 
 Las pruebas que verifican esta tabla están en `tests/seguridad/rls-roles.sql`.
 

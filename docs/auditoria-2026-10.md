@@ -33,7 +33,7 @@ Todos los hallazgos se verificaron contra producción; ninguno es teórico.
 | L-09 | Baja | 27 claves foráneas sin índice | ⏸️ Diferido | Sin impacto con el volumen actual |
 | — | — | Con la sesión vencida la app quedaba en blanco | ✅ Resuelto | `app.js` |
 | — | — | Se podía asignar una caja de otra obra | ✅ Resuelto | `integridad_fase3` |
-| N-01 | Media | El rol `carga` puede **borrar** cuotas, participaciones, fichas de inversores, cajas, unidades, presupuestos y catálogos, aunque la regla del negocio es "carga no borra" | ⏳ Pendiente | Separar las políticas `FOR ALL` en insert/update (carga) y delete (admin) |
+| N-01 | Media | El rol `carga` podía **borrar** cuotas, participaciones, fichas de inversores, cajas, unidades, presupuestos y catálogos, aunque la regla del negocio es "carga no borra" | ✅ Resuelto | `carga_no_borra` + `app.js` (presupuesto en 0, "Quitar de la obra" solo admin) |
 
 ## Pendiente de decisión del negocio
 

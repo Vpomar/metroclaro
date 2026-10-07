@@ -1723,7 +1723,7 @@ function vInversores(o){
         : (f.comp ? 'sin aportes todavía' : 'sin participación en esta obra')}</span>
       ${f.asignadas.length?`<br><span class="chip">${f.asignadas.map(esc).join(' · ')}</span>`:''}
       ${puedeEditar()?`<br><button class="link" onclick="formParticipacion('${f.p.id}')">Editar</button>`:''}
-      ${puedeEditar() && !f.n
+      ${esAdmin() && !f.n
         ? `<br><button class="link" data-nombre="${esc(f.i.nombre)}" onclick="quitarDeObra('${f.p.id}', this.dataset.nombre)">Quitar de la obra</button>` : ''}</td>
       <td class="der num">${f.a?fmtUsd(f.a):'—'}
         ${f.a?`<br><span class="pct">${fmtPct(f.partA)} de la clase</span>`:''}
@@ -3239,9 +3239,10 @@ async function borrar(tabla, id){
 
 async function setPresu(rubroId, v){
   const monto = parseFloat(v)||0;
-  const { error } = monto
-    ? await sb.from('presupuestos').upsert({ obra_id:obraActiva, rubro_id:rubroId, monto_usd:monto })
-    : await sb.from('presupuestos').delete().eq('obra_id',obraActiva).eq('rubro_id',rubroId);
+  // Un presupuesto en 0 se guarda como 0 en vez de borrar la fila:
+  // carga puede editar presupuestos pero no borrar (N-01).
+  const { error } = await sb.from('presupuestos')
+    .upsert({ obra_id:obraActiva, rubro_id:rubroId, monto_usd:monto });
   if(error) return aviso('No se pudo guardar: ' + error.message, true);
   await cargarDatos();
 }

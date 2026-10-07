@@ -17,6 +17,7 @@ esquema. Una base nueva se arma aplicándolos todos, en orden.
 | `20261007000000_esquema_base.sql` | Réplica exacta del esquema de producción al 2026-10-07 (antes de las correcciones) |
 | `20261007010000_seguridad_fase1.sql` | Correcciones de seguridad de la auditoría (vistas, archivos, auditoría, permisos) |
 | `20261007020000_integridad_fase3.sql` | Cierre de período, autoría, caja por obra, último admin, plan de cuotas, límites de archivos |
+| `20261007030000_carga_no_borra.sql` | El rol carga crea y edita pero no borra (N-01) |
 
 > En producción (Simple STGO) la migración base no figura como aplicada:
 > ese esquema ya existía y la migración se reconstruyó a partir de él. Las
@@ -31,7 +32,9 @@ esquema. Una base nueva se arma aplicándolos todos, en orden.
    - Si agrega una función, revocar `execute` a `public` y `anon`, y dar
      permiso explícito solo a quien corresponda.
    - Si agrega una tabla: `enable row level security`, políticas
-     `to authenticated` y disparador `auditar`.
+     `to authenticated` separadas por operación (`*_ver`, `*_crear` y
+     `*_editar` con `puede_editar()`, `*_borrar` con `es_admin()`; nunca
+     `for all`) y disparador `auditar`.
    - **Nunca** modificar una migración ya aplicada: se agrega una nueva.
 2. **Aplicarla en staging.** Con Claude (conector de Supabase) o desde el
    SQL Editor de staging.

@@ -37,5 +37,13 @@ select * from (values
   ('cerrar período',            pruebas.intentar(format('insert into public.cierres (obra_id, hasta) values (%L, %L)', (select id from norte), '2000-01-01'))),
   ('subirse a admin',           pruebas.intentar(format('update public.perfiles set rol = %L where id = %L', 'admin', ':UID'))),
   ('escribir auditoria',        pruebas.intentar($q$insert into public.auditoria (tabla, accion) values ('x', 'alta')$q$)),
+  -- N-01: carga crea y edita, pero solo admin borra
+  ('editar participaciones',    pruebas.intentar('update public.participaciones set nota = nota')),
+  ('borrar participaciones',    pruebas.intentar('delete from public.participaciones')),
+  ('borrar proveedores',        pruebas.intentar('delete from public.proveedores')),
+  ('borrar rubro sin uso',      pruebas.intentar($q$delete from public.rubros where nombre = 'Mampostería'$q$)),
+  ('cargar presupuesto en 0',   pruebas.intentar(format($q$insert into public.presupuestos (obra_id, rubro_id, monto_usd)
+                                  select %L, id, 0 from public.rubros where nombre = 'Estructura'
+                                  on conflict (obra_id, rubro_id) do update set monto_usd = 0$q$, (select id from norte)))),
   ('vaciar tabla (truncate)',   pruebas.intentar('truncate public.indices'))
 ) as t(control, resultado);
