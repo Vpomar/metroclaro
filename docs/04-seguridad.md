@@ -88,7 +88,7 @@ también viaja ahí. Por eso las funciones llaman a `auth.getUser()`.
 
 | Clave | Dónde vive | ¿Es secreta? |
 |---|---|---|
-| Publishable key (`sb_publishable_...`) | `public/config.js` | No: está pensada para el navegador |
+| Publishable key (`sb_publishable_...`) | `clientes.json` y `public/clientes/<id>.js` | No: está pensada para el navegador |
 | Service role / secret key | Solo dentro de las Edge Functions (la inyecta Supabase) | **Sí. Nunca en el repo ni en el navegador** |
 | `ANTHROPIC_API_KEY` | Secretos de Edge Functions de cada proyecto | **Sí** |
 | Contraseña de la base | Solo la persona responsable | **Sí** |

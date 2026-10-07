@@ -1,21 +1,75 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": "public",
-  "buildCommand": null,
   "framework": null,
+  "installCommand": "echo sin dependencias para publicar",
+  "buildCommand": null,
+  "outputDirectory": "public",
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(), payment=()" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(), microphone=(), payment=()"
+        }
       ]
     },
     {
       "source": "/(sw.js|config.js)",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/config.js",
+      "has": [
+        {
+          "type": "host",
+          "value": "stgo.metroclaro.com.ar"
+        }
+      ],
+      "destination": "/clientes/stgo.js"
+    },
+    {
+      "source": "/config.js",
+      "has": [
+        {
+          "type": "host",
+          "value": "app-simplestgo.vercel.app"
+        }
+      ],
+      "destination": "/clientes/stgo.js"
+    },
+    {
+      "source": "/config.js",
+      "has": [
+        {
+          "type": "host",
+          "value": "staging.metroclaro.com.ar"
+        }
+      ],
+      "destination": "/clientes/staging.js"
+    },
+    {
+      "source": "/config.js",
+      "destination": "/clientes/staging.js"
     }
   ]
 }

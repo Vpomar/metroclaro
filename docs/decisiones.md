@@ -17,6 +17,23 @@ otro. El esquema actual ya estaba pensado así y no requiere cambios.
 migraciones versionadas y la huella del esquema), y cada proyecto necesita
 plan Pro.
 
+## Un único proyecto de Vercel para todos los clientes
+
+**Decisión (fase 7):** un solo proyecto de Vercel con un subdominio de
+`metroclaro.com.ar` por cliente. Según el dominio, `vercel.json` entrega el
+`config.js` de ese cliente (`public/clientes/<id>.js`), generado desde
+`clientes.json`. Un dominio desconocido recibe staging.
+
+**Por qué:** un proyecto de Vercel por cliente no ahorraba nada (Vercel no
+cobra por proyecto) y multiplicaba la configuración manual (variables de
+entorno por proyecto, donde un error apunta un cliente a la base de otro).
+Con un solo proyecto, el registro de clientes está versionado, se revisa en
+un pull request y lo cubren las pruebas. Dar de alta un cliente es una
+entrada en `clientes.json` y un subdominio.
+
+**Costo:** `clientes.json` lista a todos los clientes, por eso el repositorio
+tiene que ser **privado**. Un merge a `main` llega a todos a la vez.
+
 ## Frontend sin framework ni build
 
 **Decisión:** HTML y JavaScript plano, publicado tal cual.

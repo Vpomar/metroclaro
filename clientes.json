@@ -1,0 +1,22 @@
+{
+  "$comentario": "Registro de clientes. Cada cliente tiene su proyecto de Supabase y entra por <cliente>.metroclaro.com.ar en el único proyecto de Vercel (ej. mympropiedades.metroclaro.com.ar). Solo valores PÚBLICOS (URL y publishable key). Después de editar: npm run clientes. Ver docs/07-despliegue.md.",
+  "porDefecto": "staging",
+  "clientes": [
+    {
+      "id": "stgo",
+      "nombre": "Simple STGO",
+      "entorno": "produccion",
+      "dominios": ["stgo.metroclaro.com.ar", "app-simplestgo.vercel.app"],
+      "supabaseUrl": "https://gccbybrslcrecimfblwe.supabase.co",
+      "supabaseKey": "sb_publishable__ORk1QjqzluF8w6TAwefUg_lzA4chuI"
+    },
+    {
+      "id": "staging",
+      "nombre": "Staging",
+      "entorno": "staging",
+      "dominios": ["staging.metroclaro.com.ar"],
+      "supabaseUrl": "https://tverjzxsmwnrnpnsimgh.supabase.co",
+      "supabaseKey": "sb_publishable_jaulU_4O4K9LPVdthkQI_Q_WCFb6voK"
+    }
+  ]
+}

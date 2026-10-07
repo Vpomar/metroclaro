@@ -19,9 +19,10 @@ npm run dev
 Se abre en http://localhost:8000.
 
 `.env.local` apunta a **staging** por defecto. El servidor local
-(`scripts/servidor-local.mjs`) sirve `public/` y reemplaza `config.js` por
-los valores de `.env.local`. Así nunca se trabaja contra producción por
-accidente, y el `config.js` del repo (el de producción) no se toca.
+(`scripts/servidor-local.mjs`) sirve `public/` y entrega como `config.js` los
+valores de `.env.local`; sin `.env.local`, entrega el cliente por defecto de
+`clientes.json` (staging). Así nunca se trabaja contra producción por
+accidente.
 
 > Abrir `index.html` con doble clic no funciona: el navegador bloquea las
 > peticiones desde `file://`.

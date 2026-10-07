@@ -57,10 +57,14 @@ describe('XSS (H-04)', () => {
 });
 
 describe('configuración publicada', () => {
-  it('config.js solo tiene una publishable key', () => {
-    const config = leer('public/config.js');
-    expect(config).toMatch(/sb_publishable_/);
-    expect(config).not.toMatch(/service_role|sb_secret_|eyJ[\w-]+\.[\w-]+\.[\w-]+/);
+  it('la configuración de cada cliente solo tiene una publishable key', () => {
+    const archivos = fs.readdirSync(path.join(RAIZ, 'public/clientes'));
+    expect(archivos.length).toBeGreaterThan(0);
+    for (const f of archivos) {
+      const config = leer(path.join('public/clientes', f));
+      expect(config, f).toMatch(/sb_publishable_/);
+      expect(config, f).not.toMatch(/service_role|sb_secret_|eyJ[\w-]+\.[\w-]+\.[\w-]+/);
+    }
   });
 
   it('las librerías externas tienen versión exacta y hash de integridad', () => {

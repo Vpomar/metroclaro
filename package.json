@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "node scripts/servidor-local.mjs",
+    "clientes": "node scripts/clientes.mjs",
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:watch": "vitest",

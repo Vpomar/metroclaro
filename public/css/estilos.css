@@ -251,3 +251,9 @@ tbody tr:hover{background:#FAFAF7}
   .ocultar-chico{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Franja de entorno: aparece solo fuera de producción (ver nucleo/inicio.js) */
+.franja-entorno{position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:var(--ambar);color:var(--blanco);text-align:center;
+  font-size:12px;font-weight:600;letter-spacing:.03em;padding:3px 8px;
+  pointer-events:none}

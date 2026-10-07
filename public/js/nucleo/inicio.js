@@ -26,15 +26,29 @@ async function salir(){ await sb.auth.signOut(); location.reload(); }
 
 sb.auth.onAuthStateChange((_evento, sesion) => { if(sesion) iniciar(); });
 
-/* La instancia se deduce del subdominio: cada cliente entra por el suyo */
+/* Cada cliente tiene su instancia: el nombre viene de config.js (lo genera
+   el deploy con la variable CLIENTE). Si falta, se deduce del subdominio. */
 (() => {
   const p = document.getElementById('pie-instancia');
   if(!p) return;
   const h = location.hostname.split('.');
-  const sub = h.length > 2 ? h[0] : '';
-  p.textContent = sub && sub !== 'www'
-    ? `Instancia ${sub}. Ingresá con tu cuenta.`
+  const sub = h.length > 2 && h[0] !== 'www' ? h[0] : '';
+  const instancia = window.CONFIG.cliente || sub;
+  p.textContent = instancia
+    ? `${instancia}. Ingresá con tu cuenta.`
     : 'Ingresá con tu cuenta para continuar.';
+})();
+
+/* Fuera de producción se muestra una franja fija, para que nadie confunda
+   staging (datos ficticios) con un cliente real. */
+(() => {
+  const entorno = window.CONFIG.entorno || 'produccion';
+  if(entorno === 'produccion') return;
+  const franja = document.createElement('div');
+  franja.className = 'franja-entorno';
+  franja.textContent = `${entorno.toUpperCase()} · datos de prueba, no es un cliente real`;
+  document.body.prepend(franja);
+  document.title = `[${entorno}] ${document.title}`;
 })();
 
 (async () => {

@@ -1,9 +1,9 @@
 // =====================================================================
 //  Servidor local de desarrollo
 //
-//  Sirve public/ en http://localhost:8000 y reemplaza config.js
-//  por los valores de .env.local, así se puede trabajar contra staging
-//  sin tocar el config.js que se publica.
+//  Sirve public/ en http://localhost:8000. Para /config.js usa los valores
+//  de .env.local; si no hay, entrega el cliente por defecto de clientes.json
+//  (staging), igual que hace Vercel con un dominio desconocido.
 //
 //  Uso:   node scripts/servidor-local.mjs
 //  .env.local (no se sube al repo):
@@ -31,6 +31,8 @@ if (fs.existsSync(archivoEnv)) {
 const PUERTO = Number(process.env.PUERTO || env.PUERTO || 8000);
 const URL_SB = process.env.SUPABASE_URL || env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_KEY || env.SUPABASE_KEY;
+const CLIENTE = process.env.CLIENTE || env.CLIENTE || 'Local';
+const ENTORNO = process.env.ENTORNO || env.ENTORNO || 'staging';
 
 const TIPOS = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -44,9 +46,13 @@ const PROHIBIDO = /(^|\/)\./;
 
 http.createServer((req, res) => {
   const ruta = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-  if (ruta === '/config.js' && URL_SB && KEY) {
+  if (ruta === '/config.js') {
     res.writeHead(200, { 'Content-Type': TIPOS['.js'], 'Cache-Control': 'no-store' });
-    return res.end(`window.CONFIG = ${JSON.stringify({ url: URL_SB, key: KEY })};\n`);
+    if (URL_SB && KEY)
+      return res.end(`window.CONFIG = ${JSON.stringify({ url: URL_SB, key: KEY, cliente: CLIENTE, entorno: ENTORNO })};\n`);
+    // Sin .env.local: el cliente por defecto (staging), como hace Vercel con un dominio desconocido
+    const { porDefecto } = JSON.parse(fs.readFileSync(path.join(PROYECTO, 'clientes.json'), 'utf8'));
+    return res.end(fs.readFileSync(path.join(RAIZ, 'clientes', porDefecto + '.js')));
   }
   const relativa = ruta === '/' ? 'index.html' : ruta.replace(/^\/+/, '');
   const archivo = path.join(RAIZ, relativa);
@@ -58,6 +64,6 @@ http.createServer((req, res) => {
                        'Cache-Control': 'no-store' });
   fs.createReadStream(archivo).pipe(res);
 }).listen(PUERTO, '127.0.0.1', () => {
-  const destino = URL_SB ? URL_SB : 'config.js (sin .env.local)';
+  const destino = URL_SB ? URL_SB : 'cliente por defecto de clientes.json (sin .env.local)';
   console.log(`Aplicación en http://localhost:${PUERTO}  →  Supabase: ${destino}`);
 });

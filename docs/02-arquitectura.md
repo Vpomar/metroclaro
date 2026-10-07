@@ -67,17 +67,20 @@ flowchart LR
 | Entorno | Supabase | Frontend | Datos |
 |---|---|---|---|
 | Producción (cliente Simple STGO) | `gccbybrslcrecimfblwe` | https://stgo.metroclaro.com.ar | Reales |
-| Staging | `tverjzxsmwnrnpnsimgh` | `npm run dev` en local, o la vista previa de Vercel de cada PR | Ficticios (`supabase/seed.sql`) |
+| Staging | `tverjzxsmwnrnpnsimgh` | https://staging.metroclaro.com.ar, `npm run dev` en local y las vistas previas de cada PR | Ficticios (`supabase/seed.sql`) |
 
 Staging tiene **exactamente** el mismo esquema que producción: las mismas
 migraciones, en el mismo orden.
 
-## Un proyecto por cliente
+## Un Vercel para todos, un Supabase por cliente
 
 Cada cliente tiene su propio proyecto de Supabase (su base, sus usuarios,
-sus archivos) y su propio dominio. El código es uno solo y se publica para
-cada cliente con su `config.js`. Ver [Decisiones](decisiones.md) y
-[07 · Despliegue](07-despliegue.md).
+sus archivos) y entra por su subdominio de `metroclaro.com.ar`. Un único
+proyecto de Vercel publica el mismo código para todos: según el dominio,
+`vercel.json` entrega el `config.js` de cada cliente
+(`public/clientes/<id>.js`, generado desde `clientes.json`). Fuera de
+producción la app muestra una franja de aviso. Ver
+[Decisiones](decisiones.md) y [07 · Despliegue](07-despliegue.md).
 
 ## Estructura del repositorio
 
@@ -85,7 +88,7 @@ cada cliente con su `config.js`. Ver [Decisiones](decisiones.md) y
 public/               Lo único que se publica
   index.html          Aplicación
   rendicion.html      Portal del inversor por enlace
-  config.js           URL y publishable key del cliente
+  clientes/           config.js de cada cliente (generados desde clientes.json)
   js/nucleo/          Estado, datos, cálculos, render, escritura, arranque
   js/vistas/          Una o más pestañas por archivo
   js/formularios/     Ventanas de alta y edición

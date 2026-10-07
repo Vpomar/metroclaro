@@ -39,9 +39,16 @@ Prohibido:
 | Entorno | Supabase (ref) | Uso |
 |---|---|---|
 | Producción · Simple STGO | `gccbybrslcrecimfblwe` | Datos reales. https://stgo.metroclaro.com.ar |
-| Staging | `tverjzxsmwnrnpnsimgh` | Pruebas, datos ficticios (`supabase/seed.sql`) |
+| Staging | `tverjzxsmwnrnpnsimgh` | Pruebas, datos ficticios (`supabase/seed.sql`). https://staging.metroclaro.com.ar |
 
 - **Todo se prueba primero en staging.** Producción solo recibe lo que ya pasó por staging.
+- **Multi-cliente:** un único proyecto de Vercel sirve a todos los clientes;
+  cada uno entra por `<cliente>.metroclaro.com.ar` y tiene su propio proyecto
+  de Supabase. Los clientes se registran en `clientes.json` (solo valores
+  públicos) y `npm run clientes` regenera `public/clientes/*.js` y las reglas
+  de `vercel.json` (se commitean juntos). Un merge a `main` llega a **todos**
+  los clientes: las migraciones se aplican en todas las bases antes de
+  mergear. Ver `docs/07-despliegue.md`.
 - `npm run dev` levanta la app en http://localhost:8000 contra el entorno de
   `.env.local` (staging por defecto).
 - Nunca correr pruebas que escriben contra producción.
@@ -74,7 +81,7 @@ Detalle: `docs/06-base-de-datos.md`.
 - Roles: `admin` todo; `carga` crea y edita pero **nunca borra**; `inversor`
   solo lee lo de sus obras.
 - Nunca poner en el repo ni en `public/`: service role / secret key,
-  `ANTHROPIC_API_KEY`, contraseñas, ni datos reales. `public/config.js` solo
+  `ANTHROPIC_API_KEY`, contraseñas, ni datos reales. `clientes.json` y `public/clientes/` solo
   lleva la URL y la **publishable** key.
 - Nunca commitear `respaldos/`, `.env.local` ni archivos con datos de inversores.
 - Edge Functions que usan claves secretas validan la sesión con

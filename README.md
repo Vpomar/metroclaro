@@ -15,7 +15,7 @@ despliegue, respaldos y operación.
 ├── public/               Lo que se publica en Vercel (nada más)
 │   ├── index.html        Aplicación
 │   ├── rendicion.html    Portal del inversor por enlace
-│   ├── config.js         URL y publishable key de producción
+│   ├── clientes/         config.js de cada cliente (generados desde clientes.json)
 │   ├── js/               Código: nucleo/, vistas/, formularios/ (ver js/README.md)
 │   ├── css/  img/
 │   ├── manifest.json     PWA
@@ -24,7 +24,8 @@ despliegue, respaldos y operación.
 │   ├── migrations/       Esquema versionado: única fuente de verdad de la base
 │   ├── functions/        Edge Functions (Deno)
 │   └── seed.sql          Datos ficticios para staging (nunca en producción)
-├── scripts/              Servidor local y herramientas de respaldo
+├── clientes.json         Registro de clientes: subdominio → su Supabase (npm run clientes)
+├── scripts/              Servidor local, generador de clientes y respaldos
 ├── tests/                Pruebas (seguridad, RLS)
 ├── docs/                 Documentación
 └── respaldos/            Respaldos locales — fuera de git, nunca se publican
@@ -32,10 +33,13 @@ despliegue, respaldos y operación.
 
 ## Entornos
 
-| Entorno | Supabase | Uso |
-|---|---|---|
-| Producción | Simple STGO (`gccbybrslcrecimfblwe`) | Datos reales del cliente |
-| Staging | metroclaro-staging (`tverjzxsmwnrnpnsimgh`) | Pruebas con datos ficticios |
+Un único proyecto de Vercel sirve a todos los clientes; cada uno entra por
+su subdominio de `metroclaro.com.ar` y tiene su propio proyecto de Supabase.
+
+| Cliente | Dominio | Supabase | Uso |
+|---|---|---|---|
+| Simple STGO | https://stgo.metroclaro.com.ar | `gccbybrslcrecimfblwe` | Producción, datos reales |
+| Staging | https://staging.metroclaro.com.ar | `tverjzxsmwnrnpnsimgh` | Pruebas, datos ficticios |
 
 ## Desarrollo local
 
@@ -46,8 +50,9 @@ cp .env.example .env.local     # apunta a staging por defecto
 npm run dev                    # http://localhost:8000
 ```
 
-`npm run dev` sirve `public/` y reemplaza `config.js` por los valores de
-`.env.local`, así nunca se trabaja contra producción por accidente.
+`npm run dev` sirve `public/` y entrega como `config.js` los valores de
+`.env.local` (o staging, si no existe), así nunca se trabaja contra
+producción por accidente.
 
 ## Pruebas
 
