@@ -43,7 +43,7 @@ Todas las obras juntas: aportes, ejecutado, deuda y disponible de cada una.
 |---|---|
 | **Resumen** | Aportes, ejecutado, deuda, disponible neto y avance contra el presupuesto |
 | **Cajas** | Efectivo, mutual y banco: saldo de cada una y sus aportes. La caja se mueve solo con comprobantes pagados |
-| **Comprobantes** | Carga de gastos con foto o PDF (la IA puede leer el comprobante), estado de pago, edición y exportación |
+| **Comprobantes** | Carga de gastos con foto o PDF (la app lee el comprobante: QR de ARCA, texto e IA), aviso de duplicados, estado de pago, edición y exportación |
 | **Rubros** | Presupuesto por rubro contra lo ejecutado |
 | **Honorarios** | Porcentajes de conducción, administración y desarrolladora; proyectado, devengado, pagado y saldo |
 | **Proveedores** | Cuenta corriente por proveedor con antigüedad de la deuda |
@@ -75,8 +75,10 @@ Todas las obras juntas: aportes, ejecutado, deuda y disponible de cada una.
   un administrador puede reabrir, y la reapertura queda en el historial.
 - **Enlaces de rendición:** un enlace con vencimiento que el inversor abre
   sin usuario. Se puede revocar en cualquier momento.
-- **Lectura de comprobantes con IA:** se sube la foto o el PDF y Claude
-  completa fecha, proveedor, CUIT, importes e IVA. Siempre se revisa antes
-  de guardar.
+- **Lectura de comprobantes:** se sube la foto o el PDF y la app completa
+  fecha, proveedor, CUIT, tipo, número, importes e IVA. Lee primero el QR
+  de ARCA (exacto), después el texto (del PDF o con OCR en el teléfono) y
+  consulta a la IA solo si falta algo. Los campos completados quedan
+  marcados en amarillo para revisarlos. Ver [09 · Operación](09-operacion.md).
 - **Aplicación instalable (PWA):** se puede agregar a la pantalla de inicio
   del celular y usar la cámara para sacar fotos de comprobantes.

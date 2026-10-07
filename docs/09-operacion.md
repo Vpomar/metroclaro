@@ -40,12 +40,39 @@ Una vez por mes, en **Índices**: se carga el nivel del índice o la variación
 mensual (como lo publica cifrasonline.com.ar). Las cuotas ajustadas por CAC
 se recalculan solas hasta que se cobran; al cobrarse, el importe queda fijo.
 
-## Lectura de comprobantes con IA
+## Lectura de comprobantes
 
-Al cargar un comprobante se puede subir la foto o el PDF: Claude completa los
-campos. **Siempre revisar** antes de guardar, en especial el neto, el IVA y
-las percepciones (si no suman el total, la app avisa). Cada lectura cuesta
-centavos de dólar.
+Al cargar un comprobante se puede sacar la foto o subir el PDF. La app prueba
+en orden y se detiene apenas tiene todos los datos:
+
+| Paso | Qué hace | Costo |
+|---|---|---|
+| 1. QR de ARCA | Toda factura electrónica lo trae: fecha, CUIT, tipo, número, total y moneda **exactos** | Gratis, instantáneo |
+| 2. Texto | PDF digital: su propio texto. Foto o PDF escaneado: OCR en el teléfono. Aporta el desglose de IVA y la razón social | Gratis; el OCR tarda de 3 a 15 s (la primera vez descarga unos 6 MB) |
+| 3. IA | Solo si todavía falta algo o los números no cierran. Recibe lo que ya se sabe | Centavos de dólar |
+
+Además:
+
+- Con el CUIT se busca el proveedor en el catálogo: se usan su nombre exacto
+  y su rubro (así no aparecen variantes del mismo proveedor).
+- Si el total es seguro (QR o PDF) y el desglose no cierra por un dígito mal
+  leído, se corrige con la cuenta cuando el IVA da una alícuota real.
+- Una Factura A sin IVA y sin importe exento no se da por leída.
+- Avisa si el comprobante ya está cargado (mismo CUIT y número), en
+  cualquier obra, y pide confirmar antes de guardarlo.
+- La foto se guarda achicada en JPEG (las de iPhone en HEIC también).
+- Si la IA no está disponible, lo dice y deja lo que leyeron el QR y el texto.
+
+**Siempre revisar** los campos marcados en amarillo antes de guardar (al
+pasar el mouse dice de dónde salió cada uno).
+
+Para que la foto se lea bien: el comprobante entero, derecho o de costado,
+con buena luz y el QR nítido. Los tiques térmicos arrugados o gastados
+suelen necesitar la IA.
+
+Para probar cambios en la lectura sin usar comprobantes reales:
+`tests/e2e/lectura.spec.js` (factura ficticia con QR real) y
+`tests/unit/lectura.test.js` (formatos de facturas y tiques).
 
 ## Problemas frecuentes
 

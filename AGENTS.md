@@ -100,6 +100,12 @@ Detalle: `docs/04-seguridad.md`.
 - Ningún archivo salvo `nucleo/inicio.js` ejecuta código al cargar. Los
   nombres de funciones son únicos en toda la app.
 - Todo en castellano: funciones, variables, comentarios, textos y commits.
+- Librerías de terceros del navegador: o desde CDN con versión exacta y SRI
+  (en `index.html`), o copiadas a `public/vendor/` con `npm run vendor`
+  (versión exacta en `package.json`; una prueba verifica que coincidan).
+  Nunca editar `public/vendor/` a mano.
+- Nunca commitear comprobantes reales (fotos o PDF) para pruebas: usar los
+  datos ficticios de `tests/e2e/factura-demo.js`.
 - **La app se usa en celular, iPad y PC.** Las tablas se envuelven solas en
   un recuadro que se desplaza (`envolverTablas()`); no darles anchos fijos.
   Los ajustes para pantallas chicas van en el bloque `@media (max-width:820px)`

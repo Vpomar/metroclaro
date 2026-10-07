@@ -11,7 +11,8 @@
 | Autenticación | Supabase Auth | Email y contraseña; sin registro público |
 | Archivos | Supabase Storage | Tres depósitos privados; se accede con URLs firmadas que vencen |
 | Lógica de servidor | Supabase Edge Functions (Deno) | Lo que necesita claves secretas o servicios externos |
-| IA | API de Anthropic (Claude) | Lectura de comprobantes y redacción; la clave vive solo en Supabase |
+| Lectura de comprobantes | ZXing (QR), pdf.js (texto de PDF), Tesseract (OCR) | Corren en el navegador; servidas desde `public/vendor/` con versión fija (`npm run vendor`) y cargadas solo al usarlas |
+| IA | API de Anthropic (Claude) | Último paso de la lectura de comprobantes, y redacción; la clave vive solo en Supabase |
 | Cotización | dolarapi.com | Dólar oficial; se puede cargar a mano |
 
 ## Diagrama

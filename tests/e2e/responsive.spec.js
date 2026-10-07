@@ -7,7 +7,7 @@
 //
 // Con CAPTURAS=1 guarda una imagen por pantalla en test-results/capturas.
 import { test, expect } from '@playwright/test';
-import { datosDemo } from './datos-demo.js';
+import { abrirConDatos } from './ayudantes.js';
 
 const PANTALLAS = [
   { nombre: 'iphone-se', width: 375, height: 667, movil: true },
@@ -22,22 +22,6 @@ const PANTALLAS = [
 const DE_OBRA = ['resumen', 'cajas', 'gastos', 'rubros', 'honorarios', 'proveedores', 'analisis',
   'unidades', 'inversores', 'ventas', 'avance', 'documentos', 'contador', 'rendicion', 'historial'];
 const GENERALES = ['panel', 'indices'];
-
-// Dibuja la app como la vería un admin, sin pasar por el login.
-async function abrirConDatos(page) {
-  await page.route(/supabase\.co|dolarapi\.com/, (r) => r.abort());
-  await page.goto('/');
-  await page.evaluate((datos) => {
-    perfil = { id: 'demo', nombre: 'Usuario de prueba', rol: 'admin' };
-    document.getElementById('acceso').classList.add('oculto');
-    document.getElementById('app').classList.remove('oculto');
-    document.getElementById('quien').textContent = 'Usuario de prueba · admin';
-    D = datos;
-    obraActiva = D.obras[0].id;
-    vista = 'panel';
-    render();
-  }, datosDemo());
-}
 
 // Cuánto se puede desplazar la página hacia el costado (0 = nada). Se
 // compara con el ancho del equipo y no con window.innerWidth: en un celular,

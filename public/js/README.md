@@ -13,6 +13,7 @@ navegador carga los archivos tal cual, en el orden de `index.html`.
 | `nucleo/base.js` | Cliente de Supabase (`sb`), estado global (`perfil`, `D`, `obraActiva`, `vista`, filtros), formatos (`fmtUsd`, `fecha`), fechas (`fechaLocal`, `hoy`, `sumarMeses`), `esc`, `puedeEditar`, `esAdmin`, `aviso` |
 | `nucleo/datos.js` | `todo(tabla)` (lectura paginada) y `cargarDatos()` |
 | `nucleo/calculos.js` | Consultas sobre `D` (`gastosDe`, `aportesDe`, `rubro`, …) y todos los cálculos: unidades, CAC y cuotas, análisis, superficies, cierre, honorarios, participación, totales, cajas, proveedores |
+| `nucleo/lectura.js` | Interpretación de comprobantes, sin pantalla ni red: QR de ARCA (`leerQrArca`), texto de facturas (`leerTextoComprobante`), CUIT, importes y `combinarLecturas()` |
 | `nucleo/cotizacion.js` | Dólar de referencia (dolarapi.com) |
 | `nucleo/render.js` | `render()`, `dibujar()`, pestañas y navegación (`verObra`, `verTab`); `envolverTablas()` y el menú plegable de celular (`tglMenu`) |
 | `nucleo/escritura.js` | `guardar()`, `borrar()` y cambios directos; verifican las filas afectadas |
@@ -38,7 +39,7 @@ navegador carga los archivos tal cual, en el orden de `index.html`.
 | `formularios/aporte.js` | Aporte |
 | `formularios/fichas.js` | Inversor, participación, caja, rubro y obra |
 | `formularios/avance-archivos.js` | Avance, subida y apertura de archivos |
-| `formularios/lectura-ia.js` | Lectura de comprobantes con IA |
+| `formularios/lectura-comprobante.js` | Lectura de comprobantes: QR de ARCA → texto del PDF u OCR → IA (Edge Function `leer-comprobante`) |
 
 ## Orden de carga
 
