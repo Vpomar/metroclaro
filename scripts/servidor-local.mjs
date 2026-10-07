@@ -1,7 +1,7 @@
 // =====================================================================
 //  Servidor local de desarrollo
 //
-//  Sirve la aplicación en http://localhost:8000 y reemplaza config.js
+//  Sirve public/ en http://localhost:8000 y reemplaza config.js
 //  por los valores de .env.local, así se puede trabajar contra staging
 //  sin tocar el config.js que se publica.
 //
@@ -17,10 +17,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const PROYECTO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const RAIZ = path.join(PROYECTO, 'public');
 
 const env = {};
-const archivoEnv = path.join(RAIZ, '.env.local');
+const archivoEnv = path.join(PROYECTO, '.env.local');
 if (fs.existsSync(archivoEnv)) {
   for (const linea of fs.readFileSync(archivoEnv, 'utf8').split(/\r?\n/)) {
     const m = linea.match(/^\s*([A-Z_]+)\s*=\s*(.*?)\s*$/);
@@ -38,8 +39,8 @@ const TIPOS = {
   '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json'
 };
 
-// Solo se sirven los archivos de la aplicación, nunca respaldos ni secretos.
-const PROHIBIDO = /(^|\/)(\.|respaldos|node_modules|supabase|tests|scripts)/;
+// Solo se sirve public/: respaldos, migraciones y secretos quedan afuera.
+const PROHIBIDO = /(^|\/)\./;
 
 http.createServer((req, res) => {
   const ruta = decodeURIComponent(new URL(req.url, 'http://x').pathname);

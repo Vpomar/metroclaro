@@ -11,8 +11,11 @@ rem
 rem  Requiere la CLI de Supabase instalada y el proyecto vinculado.
 rem ---------------------------------------------------------------
 
+rem Se ejecuta desde la raíz del proyecto, aunque viva en scripts\
+cd /d "%~dp0.."
+
 for /f "tokens=1-3 delims=/" %%a in ("%date:~-10%") do set FECHA=%%c-%%b-%%a
-set CARPETA=respaldo-%FECHA%
+set CARPETA=respaldos\%FECHA%
 
 if exist "%CARPETA%" (
   echo Ya existe la carpeta %CARPETA%. Se van a sobrescribir los archivos.
