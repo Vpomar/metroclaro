@@ -58,12 +58,18 @@ Deno.serve(async (req) => {
   try {
     // -----------------------------------------------------------------
     if (accion === 'listar') {
-      const { data: lista, error } = await admin.auth.admin.listUsers({ perPage: 200 });
-      if (error) throw error;
+      // Se piden todas las páginas: antes se listaban solo los primeros 200.
+      const todos = [];
+      for (let pagina = 1; ; pagina++) {
+        const { data: lista, error } = await admin.auth.admin.listUsers({ page: pagina, perPage: 200 });
+        if (error) throw error;
+        todos.push(...lista.users);
+        if (lista.users.length < 200) break;
+      }
       const { data: perfiles } = await admin.from('perfiles').select('id,nombre,rol');
       const { data: inversores } = await admin.from('inversores').select('id,nombre,perfil_id');
 
-      const usuarios = lista.users.map((u) => {
+      const usuarios = todos.map((u) => {
         const p = perfiles?.find((x) => x.id === u.id);
         const inv = inversores?.find((x) => x.perfil_id === u.id);
         return {
@@ -158,6 +164,11 @@ Deno.serve(async (req) => {
       const { id } = cuerpo;
       if (id === quien.user.id) {
         return json({ error: 'No podés eliminar tu propio usuario.' }, 400);
+      }
+      // La base también lo impide; esto es para dar un mensaje claro.
+      const { data: admins } = await admin.from('perfiles').select('id').eq('rol', 'admin');
+      if (admins?.length === 1 && admins[0].id === id) {
+        return json({ error: 'No se puede eliminar al último administrador.' }, 400);
       }
       await admin.from('inversores').update({ perfil_id: null }).eq('perfil_id', id);
       const { error } = await admin.auth.admin.deleteUser(id);

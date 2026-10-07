@@ -80,8 +80,15 @@
 <div id="modal-host"></div>
 <div id="aviso" class="aviso-flotante oculto"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Versiones exactas con hash de integridad: si el CDN entregara otro
+     archivo, el navegador no lo ejecuta. Para actualizar, cambiar la
+     versión y recalcular el hash (ver docs). -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"
+  integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R"
+  crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+  integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw"
+  crossorigin="anonymous"></script>
 <script src="config.js"></script>
 <script src="js/app.js"></script>
 <script>
