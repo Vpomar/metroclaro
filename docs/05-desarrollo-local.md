@@ -57,7 +57,7 @@ npx playwright install chromium
 
 | Comando | Qué hace |
 |---|---|
-| `npm run test:unit` | Vitest. Carga `app.js` en un navegador simulado, sin red, y prueba los cálculos (totales, honorarios, participación, CAC, cuotas), las fechas, el escape de HTML y reglas de seguridad del código (sin XSS en manejadores, librerías con SRI, sin claves secretas en `public/`, borrados verificados) |
+| `npm run test:unit` | Vitest. Carga los scripts de `public/js/` (en el orden de `index.html`) en un navegador simulado, sin red, y prueba los cálculos (totales, honorarios, participación, CAC, cuotas), las fechas, el escape de HTML y reglas de seguridad del código (sin XSS en manejadores, librerías con SRI, sin claves secretas en `public/`, borrados verificados) |
 | `npm run test:watch` | Lo mismo, re-ejecutando al guardar |
 | `npm run test:seguridad` | Sondeo sin login contra el entorno de `.env.local` |
 | `npm run test:e2e` | Playwright en Chromium contra staging: pantalla de acceso, login inválido, rendición inválida y, si están las contraseñas, recorridos por rol |

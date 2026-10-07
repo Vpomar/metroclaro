@@ -90,7 +90,36 @@
   integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw"
   crossorigin="anonymous"></script>
 <script src="config.js"></script>
-<script src="js/app.js"></script>
+<!-- La aplicación: scripts clásicos que comparten el ámbito global.
+     El ORDEN importa (ver js/README.md): núcleo, vistas, escritura,
+     formularios, exportaciones y, al final, el arranque. -->
+<script src="js/nucleo/base.js"></script>
+<script src="js/nucleo/datos.js"></script>
+<script src="js/nucleo/calculos.js"></script>
+<script src="js/nucleo/cotizacion.js"></script>
+<script src="js/nucleo/render.js"></script>
+<script src="js/vistas/panel-resumen.js"></script>
+<script src="js/vistas/unidades.js"></script>
+<script src="js/vistas/analisis.js"></script>
+<script src="js/vistas/cajas-comprobantes.js"></script>
+<script src="js/vistas/rubros-honorarios-proveedores.js"></script>
+<script src="js/vistas/inversores.js"></script>
+<script src="js/vistas/avance.js"></script>
+<script src="js/vistas/control.js"></script>
+<script src="js/vistas/ventas.js"></script>
+<script src="js/vistas/documentos.js"></script>
+<script src="js/vistas/contador-rendicion.js"></script>
+<script src="js/vistas/indices.js"></script>
+<script src="js/vistas/usuarios.js"></script>
+<script src="js/nucleo/escritura.js"></script>
+<script src="js/formularios/base.js"></script>
+<script src="js/formularios/comprobante.js"></script>
+<script src="js/formularios/aporte.js"></script>
+<script src="js/formularios/fichas.js"></script>
+<script src="js/formularios/avance-archivos.js"></script>
+<script src="js/formularios/lectura-ia.js"></script>
+<script src="js/nucleo/exportar.js"></script>
+<script src="js/nucleo/inicio.js"></script>
 <script>
   if('serviceWorker' in navigator)
     navigator.serviceWorker.register('sw.js').catch(()=>{});

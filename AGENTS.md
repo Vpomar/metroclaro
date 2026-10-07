@@ -86,6 +86,12 @@ Detalle: `docs/04-seguridad.md`.
 
 ## Convenciones del código
 
+- El frontend está en `public/js/` en scripts clásicos que comparten el
+  ámbito global (`nucleo/`, `vistas/`, `formularios/`). Antes de agregar
+  código, leer `public/js/README.md`: dónde va cada cosa, el orden de carga
+  en `index.html` y por qué `nucleo/inicio.js` va último.
+- Ningún archivo salvo `nucleo/inicio.js` ejecuta código al cargar. Los
+  nombres de funciones son únicos en toda la app.
 - Todo en castellano: funciones, variables, comentarios, textos y commits.
 - Insertar texto en HTML siempre con `esc()`.
 - **Nunca** interpolar texto dentro de `onclick="…"`: pasarlo en un atributo

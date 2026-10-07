@@ -3,10 +3,34 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { codigoDeLaApp, scriptsDeLaApp, cargarApp } from './cargar-app.js';
 
 const RAIZ = path.resolve(import.meta.dirname, '../..');
 const leer = f => fs.readFileSync(path.join(RAIZ, f), 'utf8');
-const app = leer('public/js/app.js');
+const app = codigoDeLaApp();
+
+describe('módulos de public/js', () => {
+  it('index.html carga todos los archivos de js/ y ninguno que no exista', () => {
+    const enIndex = scriptsDeLaApp().map(s => s.replace(/^js\//, '')).sort();
+    const enDisco = fs.readdirSync(path.join(RAIZ, 'public/js'), { recursive: true })
+      .filter(f => f.endsWith('.js')).map(f => f.replaceAll('\\', '/')).sort();
+    expect(enIndex).toEqual(enDisco);
+  });
+
+  it('el arranque se carga último', () => {
+    expect(scriptsDeLaApp().at(-1)).toBe('js/nucleo/inicio.js');
+  });
+
+  it('todos los módulos se ejecutan juntos sin errores', () => {
+    expect(() => cargarApp()).not.toThrow();
+  });
+
+  it('cada función se define una sola vez en toda la app', () => {
+    const nombres = [...app.matchAll(/^(?:async )?function (\w+)\(/gm)].map(m => m[1]);
+    const repetidas = nombres.filter((n, i) => nombres.indexOf(n) !== i);
+    expect(repetidas).toEqual([]);
+  });
+});
 
 describe('XSS (H-04)', () => {
   it('ningún manejador inline recibe texto escapado con esc()', () => {

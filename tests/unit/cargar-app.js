@@ -1,10 +1,11 @@
 // =====================================================================
-//  Carga public/js/app.js en un navegador simulado (jsdom), sin red ni
-//  Supabase, y devuelve sus funciones de cálculo para poder probarlas.
+//  Carga los scripts de public/js/ en un navegador simulado (jsdom), sin
+//  red ni Supabase, y devuelve sus funciones para poder probarlas.
 //
-//  app.js es un script clásico (no un módulo): se ejecuta dentro de una
-//  función y al final se devuelven las funciones que interesan. Así no
-//  hace falta cambiar app.js para testearlo.
+//  Los scripts son clásicos (no módulos) y comparten el ámbito global:
+//  se concatenan en el MISMO orden en que los carga index.html, se
+//  ejecutan dentro de una función y al final se devuelven las funciones
+//  que interesan. Así se prueba también que ese orden funcione.
 // =====================================================================
 import fs from 'node:fs';
 import path from 'node:path';
@@ -35,6 +36,18 @@ const EXPORTAR = [
   'deudaProveedores', 'estaCerrado'
 ];
 
+// Scripts propios de la app, en el orden de index.html (sin config.js ni CDN).
+export function scriptsDeLaApp() {
+  const html = fs.readFileSync(path.join(RAIZ, 'public/index.html'), 'utf8');
+  return [...html.matchAll(/<script src="(js\/[^"]+)"/g)].map(m => m[1]);
+}
+
+export function codigoDeLaApp() {
+  return scriptsDeLaApp()
+    .map(s => fs.readFileSync(path.join(RAIZ, 'public', s), 'utf8'))
+    .join('\n');
+}
+
 export function cargarApp() {
   const html = fs.readFileSync(path.join(RAIZ, 'public/index.html'), 'utf8');
   document.body.innerHTML = html
@@ -44,13 +57,13 @@ export function cargarApp() {
   window.CONFIG = { url: 'https://prueba.supabase.co', key: 'sb_publishable_prueba' };
   window.supabase = supabaseFalso();
 
-  const codigo = fs.readFileSync(path.join(RAIZ, 'public/js/app.js'), 'utf8');
+  const codigo = codigoDeLaApp();
   const salida = `\nreturn { ${EXPORTAR.join(', ')},
     fijarDatos: d => { D = d; }, fijarPerfil: p => { perfil = p; } };`;
   return new Function(codigo + salida)();
 }
 
-// Estructura vacía de D, con todas las colecciones que usa app.js.
+// Estructura vacía de D, con todas las colecciones que usa la app.
 export function datosVacios() {
   return {
     obras: [], rubros: [], cajas: [], clases: [], presupuestos: [], inversores: [],
