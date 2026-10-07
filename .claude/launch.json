@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "metroclaro",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/servidor-local.mjs"],
+      "port": 8000
+    }
+  ]
+}

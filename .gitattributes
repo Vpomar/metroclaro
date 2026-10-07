@@ -1,0 +1,11 @@
+# Finales de línea LF en el repo, sin importar el sistema operativo.
+* text=auto eol=lf
+
+# Los .bat necesitan CRLF para funcionar en Windows.
+*.bat text eol=crlf
+
+# Binarios
+*.png binary
+*.jpg binary
+*.pdf binary
+*.ico binary

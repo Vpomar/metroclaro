@@ -21,7 +21,7 @@ body{
 .acceso::before{
   content:'';position:absolute;left:50%;bottom:-60px;transform:translateX(-50%);
   width:min(1200px,130vw);height:480px;
-  background:url('fondo.svg') no-repeat center bottom;background-size:contain;
+  background:url('../img/fondo.svg') no-repeat center bottom;background-size:contain;
   opacity:.16;pointer-events:none;
 }
 .marca-acceso{position:relative;z-index:2;text-align:center}
@@ -52,7 +52,7 @@ aside{width:230px;flex:0 0 230px;background:var(--tinta);color:#E8E9E6;
   position:relative;overflow:hidden}
 aside::before{
   content:'';position:absolute;left:-180px;right:-180px;bottom:-40px;height:340px;
-  background:url('fondo.svg') no-repeat center bottom;background-size:auto 300px;
+  background:url('../img/fondo.svg') no-repeat center bottom;background-size:auto 300px;
   opacity:.14;pointer-events:none;
   -webkit-mask-image:linear-gradient(to bottom,transparent,#000 60%);
   mask-image:linear-gradient(to bottom,transparent,#000 60%);
@@ -87,7 +87,7 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 main::before{
   content:'';position:fixed;right:0;bottom:0;
   width:min(880px,66vw);height:min(560px,58vh);
-  background:url('fondo.svg') no-repeat right bottom;background-size:contain;
+  background:url('../img/fondo.svg') no-repeat right bottom;background-size:contain;
   opacity:.15;pointer-events:none;z-index:0;
   -webkit-mask-image:linear-gradient(to bottom,transparent,#000 45%);
   mask-image:linear-gradient(to bottom,transparent,#000 45%);
@@ -131,7 +131,7 @@ tr:last-child td{border-bottom:0}
 tbody tr:hover{background:#FAFAF7}
 .grupo-rubro td{background:#EFEDE7;font-size:11.5px;font-weight:600;color:var(--gris)}
 .vacio{padding:34px 14px;color:var(--gris);text-align:center;font-size:13.5px;
-  background:var(--blanco) url('fondo.svg') no-repeat center bottom;
+  background:var(--blanco) url('../img/fondo.svg') no-repeat center bottom;
   background-size:auto 120px;
   border:1px dashed var(--linea-fuerte);border-radius:var(--radio);
   box-shadow:inset 0 -70px 60px -40px var(--blanco)}
@@ -201,7 +201,7 @@ tbody tr:hover{background:#FAFAF7}
 .reporte{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--radio);
   padding:34px 38px 40px;box-shadow:0 1px 3px rgba(20,32,43,.06)}
 .rep-cabeza{border-bottom:2.5px solid var(--tinta);padding-bottom:18px;margin-bottom:28px;
-  background:url('fondo.svg') no-repeat right -34px bottom -20px;background-size:auto 104px}
+  background:url('../img/fondo.svg') no-repeat right -34px bottom -20px;background-size:auto 104px}
 .rep-cabeza h2{color:var(--tinta);position:relative;margin:0 0 6px;font-size:26px;
   font-weight:700;letter-spacing:-.025em}
 .rep-cabeza p{color:var(--gris);position:relative;margin:0;font-size:13.5px}

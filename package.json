@@ -1,0 +1,14 @@
+{
+  "name": "metroclaro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Administración de obras: cajas, comprobantes, inversores y rendiciones sobre Supabase.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node scripts/servidor-local.mjs",
+    "test:seguridad": "node tests/seguridad/sondeo-anon.mjs"
+  }
+}
