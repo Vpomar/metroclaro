@@ -6,6 +6,9 @@ Todos los hallazgos se verificaron contra producción; ninguno es teórico.
 
 ## Estado
 
+> Donde dice `app.js`: ese archivo se dividió después en `public/js/`
+> (fase 6). Las correcciones siguen ahí, en el módulo correspondiente.
+
 | ID | Severidad | Hallazgo | Estado | Dónde se corrigió |
 |---|---|---|---|---|
 | C-01 | Crítica | Las 11 vistas `v_*` eran *security definer* y `anon` podía leerlas: inversores, capital, proveedores con CUIT, costos y deudas, sin login | ✅ Resuelto | `seguridad_fase1` |

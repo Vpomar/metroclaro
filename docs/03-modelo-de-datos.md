@@ -72,7 +72,10 @@ expuestas a la API (ver [Seguridad](04-seguridad.md)).
 - Todos los totales de la aplicación son en dólares, sobre la columna `usd`.
 - Los montos usan `numeric(14,2)` y las cotizaciones `numeric(14,4)`.
 
-## Cálculos principales (`public/js/app.js`)
+## Cálculos principales
+
+Todos están en `public/js/nucleo/calculos.js`, salvo el calculador de
+aportes, que está en `public/js/vistas/inversores.js`.
 
 Un comprobante **computa** si `afecta_caja = true`. Los que no afectan caja
 son solo informativos para el contador: no suman al costo ni generan deuda.

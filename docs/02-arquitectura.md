@@ -4,7 +4,7 @@
 
 | Capa | Tecnología | Notas |
 |---|---|---|
-| Frontend | HTML, CSS y JavaScript sin framework ni build | `public/js/app.js` dibuja todo con template strings |
+| Frontend | HTML, CSS y JavaScript sin framework ni build | `public/js/` en scripts clásicos (núcleo, vistas, formularios) que comparten el ámbito global; dibujan con template strings. Mapa en `public/js/README.md` |
 | Librerías | `@supabase/supabase-js` 2.117.3, `xlsx` 0.18.5 | Desde jsDelivr, con versión exacta y hash de integridad (SRI) |
 | Hosting | Vercel | Publica `public/` desde `main`; un deploy de vista previa por pull request |
 | Base de datos | Supabase Postgres 17 | Seguridad por filas (RLS) en todas las tablas |
@@ -19,7 +19,7 @@
 ```mermaid
 flowchart LR
   subgraph Navegador
-    A[index.html + app.js] -->|supabase-js + JWT| API
+    A[index.html + js/] -->|supabase-js + JWT| API
     R[rendicion.html] -->|token del enlace| FR
   end
   subgraph Vercel
@@ -86,7 +86,10 @@ public/               Lo único que se publica
   index.html          Aplicación
   rendicion.html      Portal del inversor por enlace
   config.js           URL y publishable key del cliente
-  css/ js/ img/
+  js/nucleo/          Estado, datos, cálculos, render, escritura, arranque
+  js/vistas/          Una o más pestañas por archivo
+  js/formularios/     Ventanas de alta y edición
+  css/ img/
   manifest.json sw.js PWA (el service worker no cachea nada)
 supabase/
   migrations/         Esquema versionado: única fuente de verdad

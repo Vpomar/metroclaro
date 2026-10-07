@@ -16,7 +16,8 @@ despliegue, respaldos y operación.
 │   ├── index.html        Aplicación
 │   ├── rendicion.html    Portal del inversor por enlace
 │   ├── config.js         URL y publishable key de producción
-│   ├── css/  js/  img/
+│   ├── js/               Código: nucleo/, vistas/, formularios/ (ver js/README.md)
+│   ├── css/  img/
 │   ├── manifest.json     PWA
 │   └── sw.js
 ├── supabase/

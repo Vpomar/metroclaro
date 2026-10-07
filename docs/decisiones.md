@@ -22,12 +22,30 @@ plan Pro.
 **Decisión:** HTML y JavaScript plano, publicado tal cual.
 
 **Por qué:** es como se construyó, funciona, y no hay paso de compilación que
-pueda fallar. Se puede revisar a futuro si `app.js` sigue creciendo.
+pueda fallar.
+
+## El frontend dividido en scripts clásicos, no en módulos ES
+
+**Decisión (fase 6):** el antiguo `app.js` (3.900 líneas) se dividió en 27
+archivos en `public/js/nucleo/`, `vistas/` y `formularios/`, que se cargan
+como scripts clásicos en orden y comparten el ámbito global.
+
+**Por qué:** la interfaz usa cientos de manejadores `onclick="funcion(…)"`
+que buscan funciones globales. Con módulos ES habría que exportar cada una
+a mano, con mucho riesgo de romper algo. Con scripts clásicos el
+comportamiento es idéntico: el corte se hizo sin tocar una línea de código
+y se verificó que cada archivo coincide exactamente con su tramo del
+original. Lo único que cambió de lugar es el arranque, que pasó al final.
+
+**Costo:** el ámbito es global, así que los nombres tienen que ser únicos y
+el orden de carga importa (ver `public/js/README.md`). Dos pruebas
+unitarias lo controlan. Si en el futuro se agrega un build (Vite, por
+ejemplo), el paso natural es convertir estos archivos en módulos.
 
 ## Los cálculos se hacen en el navegador
 
-**Decisión:** totales, honorarios y participaciones se calculan en
-`app.js` sobre los datos que el RLS deja ver. Las vistas `v_*` de la base
+**Decisión:** totales, honorarios y participaciones se calculan en el
+navegador (`public/js/nucleo/calculos.js`) sobre los datos que el RLS deja ver. Las vistas `v_*` de la base
 no se usan.
 
 **Por qué:** así se escribió la aplicación. Las vistas quedaron con
