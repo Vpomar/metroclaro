@@ -11,12 +11,12 @@ function formGasto(id){
   const g = id ? D.comprobantes.find(x=>x.id===id) : null, v = g || {};
   if(!cs.length) return alert('Primero agregá una caja a esta obra.');
   modal(g ? 'Editar comprobante' : 'Cargar comprobante', `
-    <div class="lector" id="lector">
+    <div class="lector" id="lector" data-id="${g?.id||''}">
       <label for="foto">Comprobante</label>
       <input id="foto" type="file" accept="image/*,application/pdf" capture="environment"
         onchange="leerComprobante(this)">
-      <span class="ayuda" id="foto-estado">Sacá la foto o subí el PDF: completo los campos
-        y guardo el archivo junto al asiento. Revisalos antes de guardar.</span>
+      <span class="ayuda" id="foto-estado">Sacá la foto o subí el PDF: leo el código QR de la
+        factura y el texto, y completo los campos. Revisalos antes de guardar.</span>
     </div>
     <div class="campo"><label for="f">Fecha</label><input id="f" type="date" value="${v.fecha||hoy()}"></div>
     <div class="campo"><label for="prov">Proveedor</label>
@@ -85,7 +85,11 @@ function formGasto(id){
       if(!imp || imp<=0) return err('El importe tiene que ser mayor a cero.');
       const mon = val('mon'), ct = parseFloat(val('ct'));
       if(!ct || ct<=0) return err('Necesito la cotización del día.');
-      document.getElementById('ok').disabled = true;
+      const dup = comprobanteDuplicado(val('cuit'), val('nro'), g?.id);
+      if(dup && !confirm(`Ya está cargado el comprobante ${dup.numero} de ${dup.proveedor} ` +
+          `(${fecha(dup.fecha)}${dup.obra ? ', ' + dup.obra : ''}). ¿Cargarlo igual?`)) return;
+      const ok = document.getElementById('ok');
+      ok.disabled = true;
       const afecta = val('afecta') === 'si';
       const datos = { obra_id:o.id, rubro_id:val('rub'), fecha:val('f'),
         proveedor:val('prov'), cuit:val('cuit'), tipo:val('tipo'), numero:val('nro'),
@@ -99,7 +103,12 @@ function formGasto(id){
         pago: afecta ? val('pago') : 'pagado',
         fecha_pago: afecta && val('pago')==='pagado' ? val('fp') : null,
         creado_por: perfil.id };
-      if(archivoPendiente) datos.archivo = await subirArchivo('comprobantes', archivoPendiente, o.id);
+      // Si el archivo no sube, no se guarda: al editar, se perdía el archivo anterior
+      if(archivoPendiente){
+        const ruta = await subirArchivo('comprobantes', archivoPendiente, o.id);
+        if(!ruta){ ok.disabled = false; return err('No se pudo subir el archivo. Probá de nuevo.'); }
+        datos.archivo = ruta;
+      }
       cerrar();
       await guardar('comprobantes', datos, g?.id);
       archivoPendiente = null;

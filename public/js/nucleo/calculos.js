@@ -52,6 +52,23 @@ function autoProveedor(){
   if(rub && p.rubro_id && D.rubros.some(r=>r.id===p.rubro_id) && !rub.dataset.tocado)
     rub.value = p.rubro_id;
 }
+/* Proveedor del catálogo con ese CUIT (comparando solo los dígitos). La
+   lectura de comprobantes lo usa para poner el nombre exacto y el rubro, y
+   no crear variantes del mismo proveedor ("HORMIGONES SA" y "Hormigones S.A."). */
+function proveedorPorCuit(cuit){
+  const d = String(cuit||'').replace(/\D/g, '');
+  if(d.length !== 11) return null;
+  return proveedoresConocidos().find(p => String(p.cuit||'').replace(/\D/g, '') === d) || null;
+}
+/* Comprobante ya cargado con el mismo CUIT y número, en cualquier obra.
+   exceptoId: el que se está editando. */
+function comprobanteDuplicado(cuit, numero, exceptoId){
+  const d = String(cuit||'').replace(/\D/g, ''), n = claveNumero(numero);
+  if(d.length !== 11 || !n) return null;
+  const g = D.comprobantes.find(x => x.id !== exceptoId &&
+    String(x.cuit||'').replace(/\D/g, '') === d && claveNumero(x.numero) === n);
+  return g ? { ...g, obra: D.obras.find(o => o.id === g.obra_id)?.nombre } : null;
+}
 const ventasDe  = id => D.ventas.filter(v => v.obra_id === id);
 const cuotasDe  = id => D.cuotas.filter(c => c.venta_id === id).slice().sort((a,b)=>a.numero-b.numero);
 const enlacesDe = id => (D.enlaces||[]).filter(e => e.obra_id === id);

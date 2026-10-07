@@ -33,7 +33,9 @@ const EXPORTAR = [
   'fechaLocal', 'hoy', 'sumarMeses', 'fecha', 'esc', 'fmtUsd',
   'totalesObra', 'saldoCaja', 'baseEjecutada', 'honorarios', 'presu',
   'clasesDe', 'unidades', 'serieCac', 'cacDe', 'cacUltimo', 'montoCuota',
-  'deudaProveedores', 'estaCerrado'
+  'deudaProveedores', 'estaCerrado',
+  'numeroAR', 'cuitValido', 'fechaISO', 'claveNumero', 'leerQrArca', 'leerTextoComprobante',
+  'combinarLecturas', 'faltantesLectura', 'proveedorPorCuit', 'comprobanteDuplicado'
 ];
 
 // Scripts propios de la app, en el orden de index.html (sin config.js ni CDN).
