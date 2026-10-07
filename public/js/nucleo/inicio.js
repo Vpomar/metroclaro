@@ -90,7 +90,7 @@ async function iniciar(){
 
 
 /* Los manejadores en línea del HTML se resuelven contra el ámbito global. */
-Object.assign(window, { verObra, verTab, setCotiz, setTcRef, tglAfecta, setCalc, calcularIva, setRango,
+Object.assign(window, { verObra, verTab, tglMenu, setCotiz, setTcRef, tglAfecta, setCalc, calcularIva, setRango,
   autoProveedor, setFiltro, limpiarFiltros,
   cargarUsuarios, formUsuario, tglModoUsuario, cambiarRol, vincularInversor,
   descargarRespaldo, descargarFotos, formDocumento, tiposDeCategoria,
