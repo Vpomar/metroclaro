@@ -50,8 +50,10 @@ async function exigirEquipo(req: Request): Promise<Response | null> {
   return null;
 }
 
-// La respuesta se pide como una "herramienta" con esquema fijo: el modelo
-// tiene que devolver exactamente estos campos, sin texto alrededor.
+// La respuesta se pide como una "herramienta" con esquema fijo. No se la
+// impone con tool_choice "tool": algunos modelos no lo admiten y rechazan el
+// pedido entero (pasó en producción). Se la pide en la consigna y, si el
+// modelo igual contesta con texto, se lee el JSON del texto.
 const n = { type: ['number', 'null'] };
 const t = { type: ['string', 'null'] };
 const herramienta = (rubros: string[]) => ({
@@ -81,7 +83,7 @@ const herramienta = (rubros: string[]) => ({
 
 const CONSIGNA = [
   'Sos un asistente contable argentino. Este es un comprobante de compra de una obra en construcción.',
-  'Registrá sus datos con la herramienta registrar_comprobante.',
+  'Respondé SOLO usando la herramienta registrar_comprobante, sin texto aparte.',
   '',
   'Reglas para los importes:',
   '- "importe" es el TOTAL final del comprobante, el que se paga.',
@@ -143,9 +145,10 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODELO,
-        max_tokens: 1000,
+        // Holgado: si el modelo razona antes de contestar, también usa tokens
+        max_tokens: 4000,
         tools: [herramienta(listaRubros)],
-        tool_choice: { type: 'tool', name: 'registrar_comprobante' },
+        tool_choice: { type: 'auto' },
         messages: [{ role: 'user', content: [bloque, { type: 'text', text: consigna }] }]
       })
     });
@@ -156,9 +159,22 @@ Deno.serve(async (req) => {
     }
 
     const d = await r.json();
-    const uso = (d.content || []).find((c: { type: string }) => c.type === 'tool_use');
-    if (!uso?.input) return falla('ilegible', 'No se pudo interpretar el comprobante.', 422);
-    const datos = uso.input;
+    const contenido = d.content || [];
+    const uso = contenido.find((c: { type: string; name?: string }) =>
+      c.type === 'tool_use' && c.name === 'registrar_comprobante');
+    let datos = uso?.input;
+    if (!datos) {
+      // Respaldo: el JSON vino como texto
+      const texto = contenido.filter((c: { type: string }) => c.type === 'text')
+        .map((c: { text: string }) => c.text).join('');
+      const m = texto.match(/\{[\s\S]*\}/);
+      try { datos = m ? JSON.parse(m[0]) : null; } catch { datos = null; }
+    }
+    if (!datos || typeof datos !== 'object') {
+      console.error('Respuesta sin datos', d.stop_reason, JSON.stringify(contenido.map(
+        (c: { type: string }) => c.type)));
+      return falla('ilegible', 'No se pudo interpretar el comprobante.', 422);
+    }
 
     // Si la suma no cierra, se deja lo que sí se leyó y se avisa.
     const num = (x: unknown) => Number(x) || 0;
