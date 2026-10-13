@@ -5,22 +5,104 @@
    Script clásico: comparte el ámbito global con los demás archivos de
    js/. El orden de carga está en index.html (ver js/README.md).
    ===================================================================== */
+/* ---------- Pizarra ----------
+   El dato de apertura con su curva. Una sola por pantalla: si hubiera
+   dos, no habría ninguna. ---------------------------------------- */
+function pizarra({ rotulo, monto, bajo, datos, serie, ejes }){
+  const partes = fmtUsd2(monto).replace('US$ ', '').split(',');
+  return `
+  <div class="pizarra">
+    <div>
+      <p class="rot">${esc(rotulo)}</p>
+      <p class="gran num"><span class="cur">US$</span>${partes[0]}<span class="dec">,${partes[1] || '00'}</span></p>
+      ${bajo ? `<p class="bajo">${esc(bajo)}</p>` : ''}
+      ${datos && datos.length ? `<div class="sub-datos">
+        ${datos.map(d => `<div><p>${esc(d[0])}</p>
+          <p class="num ${d[2] || ''}">${esc(d[1])}</p></div>`).join('')}
+      </div>` : ''}
+    </div>
+    ${serie && serie.length > 1 ? `<div class="curva">
+      ${curvaPizarra(serie)}
+      <div class="ejes"><span>${esc(ejes[0])}</span><span>${esc(ejes[1])}</span></div>
+    </div>` : '<div></div>'}
+  </div>`;
+}
+
+/* Línea del disponible mes a mes. Sin ejes ni grilla: la forma alcanza. */
+function curvaPizarra(serie){
+  const W = 520, H = 130;
+  const min = Math.min(...serie), max = Math.max(...serie);
+  const rango = (max - min) || 1;
+  const x = i => serie.length < 2 ? 0 : i * W / (serie.length - 1);
+  const y = v => 12 + (H - 24) * (1 - (v - min) / rango);
+  const linea = serie.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const fin = serie.length - 1;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+      aria-label="Evolución del disponible">
+    <defs><linearGradient id="pz" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F26B1D" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#F26B1D" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${linea} L${W},${H} L0,${H} Z" fill="url(#pz)"/>
+    <path d="${linea}" fill="none" stroke="#F2F1EE" stroke-width="1.4"
+      stroke-linejoin="round" stroke-linecap="round" opacity=".88"
+      vector-effect="non-scaling-stroke"/>
+    <circle cx="${x(fin).toFixed(1)}" cy="${y(serie[fin]).toFixed(1)}" r="3" fill="#F26B1D"/>
+  </svg>`;
+}
+
+/* Disponible acumulado de los últimos doce meses: aportes menos pagos */
+function serieDisponible(obraIds){
+  const ids = [].concat(obraIds);
+  const movs = [];
+  ids.forEach(id => {
+    aportesDe(id).forEach(a => movs.push({ f: a.fecha, v: +a.usd }));
+    gastosDe(id).filter(g => computa(g) && g.pago === 'pagado')
+      .forEach(g => movs.push({ f: g.fecha_pago || g.fecha, v: -g.usd }));
+  });
+  if(!movs.length) return { serie: [], ejes: ['', ''] };
+
+  const meses = [];
+  for(let i = 11; i >= 0; i--) meses.push(sumarMeses(hoy(), -i).slice(0, 7));
+  const serie = meses.map(m =>
+    movs.filter(x => x.f.slice(0, 7) <= m).reduce((s, x) => s + x.v, 0));
+  return { serie, ejes: [nombreMes(meses[0]), nombreMes(meses[11])] };
+}
+
+/* Gasto promedio de los últimos seis meses, para saber cuánto dura la caja */
+function ritmoDeGasto(obraIds){
+  const desde = sumarMeses(hoy(), -6);
+  const g = [].concat(obraIds).flatMap(id => gastosDe(id))
+    .filter(x => computa(x) && x.fecha >= desde)
+    .reduce((s, x) => s + +x.usd, 0);
+  return g / 6;
+}
+
 /* ---------- Panel: todas las obras juntas ---------- */
 function vPanel(){
   const fs = D.obras.map(o => ({ o, t: totalesObra(o.id),
     cierre: cierreDe(o.id), docs: docsDe(o.id).length }));
   const sum = k => fs.reduce((s,f)=>s+f.t[k],0);
 
+  const { serie, ejes } = serieDisponible(D.obras.map(o => o.id));
+  const ritmo = ritmoDeGasto(D.obras.map(o => o.id));
+  const neto = sum('neto');
+
   return `
-  <div class="fila">
-    <div class="kpi"><p class="r">Obras activas</p><p class="v num">${fs.length}</p></div>
-    <div class="kpi"><p class="r">Aportes recibidos</p><p class="v num">${fmtUsd(sum('ing'))}</p></div>
-    <div class="kpi"><p class="r">Ejecutado</p><p class="v num">${fmtUsd(sum('egr'))}</p></div>
-    <div class="kpi ${sum('deuda')>0?'alerta':''}"><p class="r">Deuda a proveedores</p>
-      <p class="v num">${fmtUsd(sum('deuda'))}</p></div>
-    <div class="kpi ${sum('neto')<0?'alerta':''}"><p class="r">Disponible neto</p>
-      <p class="v num">${fmtUsd(sum('neto'))}</p></div>
-  </div>
+  ${pizarra({
+    rotulo: fs.length === 1 ? 'Disponible neto' : `Disponible neto · ${fs.length} obras`,
+    monto: neto,
+    bajo: neto < 0 ? 'el disponible no cubre la deuda cargada'
+        : !(ritmo > 0) ? 'aportes recibidos menos ejecutado, descontada la deuda'
+        : neto / ritmo < 1 ? 'alcanza menos de un mes al ritmo de gasto reciente'
+        : `alcanza ${Math.floor(neto / ritmo)} ${Math.floor(neto / ritmo) === 1 ? 'mes' : 'meses'} al ritmo de los últimos seis`,
+    datos: [
+      ['Aportes',   fmtUsd(sum('ing')),   'alza'],
+      ['Ejecutado', fmtUsd(sum('egr')),   ''],
+      ['Deuda',     fmtUsd(sum('deuda')), sum('deuda') > 0 ? 'baja' : '']
+    ],
+    serie, ejes
+  })}
 
   <h3>Comparativo por obra</h3>
   ${fs.length ? `<table><thead><tr><th>Obra</th><th class="der">Presupuesto</th>
@@ -57,21 +139,42 @@ function vResumen(o){
   const ults = gastosDe(o.id).filter(computa).slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,8);
   const porRubro = D.rubros.map(r=>({r,p:presu(o.id,r.id),e:ejecutado(o.id,r.id)}))
     .filter(x=>x.p||x.e).sort((a,b)=>b.e-a.e);
+
+  const { serie, ejes } = serieDisponible(o.id);
+  const ritmo = ritmoDeGasto(o.id);
+  const cs = cajasDe(o.id);
+  const c = typeof computo === 'function' ? computo(o.id) : null;
+
   return `
+  ${pizarra({
+    rotulo: 'Disponible neto',
+    monto: t.neto,
+    bajo: t.neto < 0 ? 'el disponible no cubre la deuda cargada'
+        : !(ritmo > 0) ? `${fmtUsd(t.saldo)} en cajas, menos ${fmtUsd(t.deuda)} de deuda`
+        : t.neto / ritmo < 1 ? 'alcanza menos de un mes al ritmo de gasto reciente'
+        : `alcanza ${Math.floor(t.neto / ritmo)} ${Math.floor(t.neto / ritmo) === 1 ? 'mes' : 'meses'} al ritmo de los últimos seis`,
+    datos: [
+      ['Aportes',   fmtUsd(t.ing),   'alza'],
+      ['Ejecutado', fmtUsd(t.egr),   ''],
+      ['Deuda',     fmtUsd(t.deuda), t.deuda > 0 ? 'baja' : ''],
+      ...(t.pres ? [['Avance del presupuesto', fmtPct(t.avance), '']] : [])
+    ],
+    serie, ejes
+  })}
+
   <div class="fila">
-    <div class="kpi"><p class="r">Aportes integrados</p><p class="v num">${fmtUsd(t.ing)}</p>
-      <p class="s">${aportesDe(o.id).length} movimientos</p></div>
-    <div class="kpi"><p class="r">Ejecutado</p><p class="v num">${fmtUsd(t.egr)}</p>
-      <p class="s">${fmtUsd(t.pag)} pagado${t.sinCaja?` · ${fmtUsd(t.sinCaja)} informativo aparte`:''}</p></div>
-    <div class="kpi ${t.deuda>0?'alerta':''}"><p class="r">Deuda a proveedores</p>
-      <p class="v num">${fmtUsd(t.deuda)}</p>
-      <p class="s">${t.deuda>0?'facturas pendientes':'sin facturas pendientes'}</p></div>
-    <div class="kpi ${t.neto<0?'alerta':''}"><p class="r">Disponible neto</p>
-      <p class="v num">${fmtUsd(t.neto)}</p>
-      <p class="s">${fmtUsd(t.saldo)} en cajas menos la deuda</p></div>
-    <div class="kpi ${exc?'alerta':''}"><p class="r">Avance del presupuesto</p>
-      <p class="v num">${t.pres?fmtPct(t.avance):'—'}</p>
-      <p class="s">${t.pres?('sobre '+fmtUsd(t.pres)):'Cargá el presupuesto en Rubros'}</p></div>
+    ${cs.map(x => {
+      const q = saldoCaja(x.id);
+      return `<div class="kpi"><p class="r">${esc(x.nombre)}</p>
+        <p class="v num">${fmtUsd(q.saldo)}</p>
+        <p class="s">${q.deuda ? fmtUsd(q.deuda) + ' pendiente de pago' : 'sin deuda imputada'}</p></div>`;
+    }).join('')}
+    ${c && c.vendible ? `<div class="kpi"><p class="r">Costo por m² vendible</p>
+      <p class="v num">${fmtUsd(t.egr / c.vendible)}</p>
+      <p class="s">proyectado ${fmtUsd(c.porVendible)}</p></div>` : ''}
+    ${t.sinCaja ? `<div class="kpi"><p class="r">Solo informativo</p>
+      <p class="v num">${fmtUsd(t.sinCaja)}</p>
+      <p class="s">no suma al costo ni mueve caja</p></div>` : ''}
   </div>
   ${bloqueFicha(o, t)}
 
