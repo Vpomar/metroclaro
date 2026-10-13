@@ -145,7 +145,8 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODELO,
-        max_tokens: 1000,
+        // Holgado: si el modelo razona antes de contestar, también usa tokens
+        max_tokens: 4000,
         tools: [herramienta(listaRubros)],
         tool_choice: { type: 'auto' },
         messages: [{ role: 'user', content: [bloque, { type: 'text', text: consigna }] }]
@@ -170,6 +171,8 @@ Deno.serve(async (req) => {
       try { datos = m ? JSON.parse(m[0]) : null; } catch { datos = null; }
     }
     if (!datos || typeof datos !== 'object') {
+      console.error('Respuesta sin datos', d.stop_reason, JSON.stringify(contenido.map(
+        (c: { type: string }) => c.type)));
       return falla('ilegible', 'No se pudo interpretar el comprobante.', 422);
     }
 
