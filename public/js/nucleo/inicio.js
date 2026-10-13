@@ -26,6 +26,9 @@ async function salir(){ await sb.auth.signOut(); location.reload(); }
 
 sb.auth.onAuthStateChange((_evento, sesion) => { if(sesion) iniciar(); });
 
+/* El buscador por teclado queda activo desde el arranque (Ctrl+K / ⌘K) */
+iniciarBuscador();
+
 /* Cada cliente tiene su instancia: el nombre viene de config.js (lo genera
    el deploy con la variable CLIENTE). Si falta, se deduce del subdominio. */
 (() => {

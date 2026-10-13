@@ -15,6 +15,7 @@ navegador carga los archivos tal cual, en el orden de `index.html`.
 | `nucleo/calculos.js` | Consultas sobre `D` (`gastosDe`, `aportesDe`, `rubro`, …) y todos los cálculos: unidades, CAC y cuotas, análisis, superficies, cierre, honorarios, participación, totales, cajas, proveedores |
 | `nucleo/lectura.js` | Interpretación de comprobantes, sin pantalla ni red: QR de ARCA (`leerQrArca`), texto de facturas (`leerTextoComprobante`), CUIT, importes y `combinarLecturas()` |
 | `nucleo/cotizacion.js` | Dólar de referencia (dolarapi.com) |
+| `nucleo/buscador.js` | Buscador por teclado (Ctrl+K / ⌘K): obras, pestañas, acciones, proveedores, rubros, unidades e inversores. Lo arranca `iniciarBuscador()` |
 | `nucleo/render.js` | `render()`, `dibujar()`, pestañas y navegación (`verObra`, `verTab`); `envolverTablas()` y el menú plegable de celular (`tglMenu`) |
 | `nucleo/escritura.js` | `guardar()`, `borrar()` y cambios directos; verifican las filas afectadas |
 | `nucleo/exportar.js` | Exportaciones a Excel |

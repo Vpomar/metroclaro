@@ -80,5 +80,8 @@ Todas las obras juntas: aportes, ejecutado, deuda y disponible de cada una.
   de ARCA (exacto), después el texto (del PDF o con OCR en el teléfono) y
   consulta a la IA solo si falta algo. Los campos completados quedan
   marcados en amarillo para revisarlos. Ver [09 · Operación](09-operacion.md).
+- **Buscador (Ctrl+K, ⌘K en Mac):** lleva a cualquier obra, pestaña o
+  acción, y busca proveedores, rubros, unidades e inversores sin importar
+  las tildes. Elegir un proveedor o un rubro abre Comprobantes filtrado.
 - **Aplicación instalable (PWA):** se puede agregar a la pantalla de inicio
   del celular y usar la cámara para sacar fotos de comprobantes.

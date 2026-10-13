@@ -23,11 +23,14 @@ function dibujar(){
   if(!D) return;
   document.getElementById('sub-obras').textContent =
     D.obras.length + (D.obras.length===1 ? ' obra activa' : ' obras activas');
-  document.getElementById('lista-obras').innerHTML = D.obras.map(o => {
+  /* Índice numerado: la obra se nombra por su número, como un legajo */
+  document.getElementById('lista-obras').innerHTML = D.obras.map((o, i) => {
     const t = totalesObra(o.id);
+    const avance = t.pres ? fmtPct(t.egr / t.pres * 100) : '—';
     return `<button class="obra-btn ${o.id===obraActiva && vista!=='panel' && vista!=='usuarios' ?'on':''}"
       onclick="verObra('${o.id}')">
-      <span>${esc(o.nombre)}</span><small class="num">${fmtUsd(t.egr)}</small></button>`;
+      <span class="ix num">${String(i+1).padStart(2,'0')}</span>
+      <span>${esc(o.nombre)}</span><small class="num">${avance}</small></button>`;
   }).join('');
 
   const enPanel = vista === 'panel' || vista === 'usuarios' || vista === 'indices';
@@ -35,10 +38,10 @@ function dibujar(){
     ? [['panel','Panel']]
         .concat(puedeEditar() ? [['indices','Índices']] : [])
         .concat(esAdmin() ? [['usuarios','Usuarios']] : [])
-    : [['resumen','Resumen'],['cajas','Cajas'],['gastos','Comprobantes'],
-       ['rubros','Rubros'],['honorarios','Honorarios'],['proveedores','Proveedores'],
-       ['analisis','Análisis'],['unidades','Unidades'],['inversores','Inversores'],['ventas','Ventas'],['avance','Avance'],['documentos','Documentos'],
-       ['contador','Contador'],['rendicion','Rendición']]
+    : [['resumen','Resumen'],['cajas','Cajas'],['gastos','Comprobantes'],['proveedores','Proveedores'],
+       ['rubros','Rubros'],['honorarios','Honorarios'],['analisis','Análisis'],['unidades','Unidades'],
+       ['inversores','Inversores'],['ventas','Ventas'],['avance','Avance'],['documentos','Documentos'],
+       ['rendicion','Rendición'],['contador','Contador']]
        .concat(puedeEditar() ? [['historial','Historial']] : []);
   document.getElementById('tabs').innerHTML = TABS.map(([k,n]) =>
     `<button class="tab ${vista===k?'on':''}" onclick="verTab('${k}')">${n}</button>`).join('');
