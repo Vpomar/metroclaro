@@ -80,6 +80,13 @@ Todas las obras juntas: aportes, ejecutado, deuda y disponible de cada una.
   de ARCA (exacto), después el texto (del PDF o con OCR en el teléfono) y
   consulta a la IA solo si falta algo. Los campos completados quedan
   marcados en amarillo para revisarlos. Ver [09 · Operación](09-operacion.md).
+- **Vender una unidad hoy** (Análisis → desplegable): simula cobrar una
+  unidad al contado ahora en vez de venderla terminada. Muestra el piso de
+  precio donde la tasa del inversor no baja, la tasa con y sin la venta, los
+  aportes que se evitan y cuánto pasa a costar el m² de las unidades que
+  quedan. Es interno (no va a la rendición) y avisa si las unidades cargadas
+  no cubren los m² vendibles del anteproyecto, porque entonces el costo por
+  unidad no es confiable.
 - **Buscador (Ctrl+K, ⌘K en Mac):** lleva a cualquier obra, pestaña o
   acción, y busca proveedores, rubros, unidades e inversores sin importar
   las tildes. Elegir un proveedor o un rubro abre Comprobantes filtrado.

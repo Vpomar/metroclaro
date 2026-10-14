@@ -8,10 +8,37 @@
 /* ---------- Análisis económico ---------- */
 const m2f = v => (+v||0).toLocaleString('es-AR',{maximumFractionDigits:2}) + ' m²';
 
+/* Qué análisis se está mirando. Son miradas distintas sobre la misma obra,
+   así que van en un desplegable y no en pestañas aparte. */
+let analisisVista = 'anteproyecto';
+function setAnalisis(v){ analisisVista = v; render(); }
+
+const ANALISIS = [
+  ['anteproyecto', 'Económico del anteproyecto'],
+  ['vender',       'Vender una unidad hoy']
+];
+
+function selectorAnalisis(){
+  return `<div class="acciones no-imprimir">
+    <label for="sel-analisis" style="font-size:11px;color:var(--gris)">Análisis</label>
+    <select id="sel-analisis" onchange="setAnalisis(this.value)"
+      style="font:inherit;font-size:12.5px;padding:6px 26px 6px 9px;
+        border:1px solid var(--linea-fuerte);border-radius:var(--radio);background:var(--hoja)">
+      ${ANALISIS.map(([v,t]) =>
+        `<option value="${v}" ${v===analisisVista?'selected':''}>${esc(t)}</option>`).join('')}
+    </select>
+  </div>`;
+}
+
 function vAnalisis(o){
+  // Los supuestos del simulador son de una obra: al cambiar de obra vuelven a cero
+  if(ventaHoy.obra !== o.id)
+    ventaHoy = { obra:o.id, unidad:null, precio:null, mesVenta:null, precioFinal:null, tasaRef:8 };
   const c = computo(o.id);
   const a = analisisDe(o.id);
   const ns = nivelesDe(o.id);
+
+  if(a && analisisVista === 'vender') return selectorAnalisis() + vVenderHoy(o, c);
 
   if(!a){
     return `<div class="vacio" style="text-align:left">
@@ -27,7 +54,7 @@ function vAnalisis(o){
   const t = totalesObra(o.id);
   const real = c && c.vendible ? t.egr / c.vendible : 0;
 
-  return `
+  return selectorAnalisis() + `
   ${puedeEditar()?`<div class="acciones">
     <button class="btn sec" onclick="formAnalisis()">Parámetros</button>
     <button class="btn" onclick="formNivel()">Agregar nivel</button>
@@ -243,3 +270,316 @@ function formNivel(id){
     });
 }
 
+
+/* =====================================================================
+   Vender una unidad hoy
+
+   Qué le hace al proyecto cobrar una unidad al contado ahora, en vez de
+   venderla terminada. Pantalla interna: no va a la rendición.
+
+   Hay tres precios y conviene no confundirlos:
+     costo de la unidad  lo que consumió del emprendimiento
+     piso                el costo más la parte del margen que hace falta
+                         para que la tasa del inversor no baje
+     valor terminado     lo que se espera cobrar al cierre
+   ===================================================================== */
+let ventaHoy = { obra:null, unidad:null, precio:null, mesVenta:null, precioFinal:null, tasaRef:8 };
+
+/* El precio se recalcula al soltar el control deslizante (onchange): si se
+   redibujara mientras se arrastra, el control se reemplaza y el arrastre se
+   corta. Mientras tanto solo se actualiza el número (oninput). */
+function setVentaHoy(campo, valor){
+  const n = parseFloat(valor);
+  ventaHoy[campo] = (campo === 'unidad') ? valor : (isNaN(n) ? null : n);
+  if(campo === 'unidad') ventaHoy.precio = null;   // el rango cambia con la unidad
+  render();
+}
+
+/* Tasa interna de retorno mensual, por bisección.
+   El flujo tiene un solo cambio de signo, así que converge siempre. */
+function tirMensual(flujo){
+  const van = r => flujo.reduce((s,f,i) => s + f / Math.pow(1 + r, i), 0);
+  if(van(0) <= 0) return null;
+  let lo = 0, hi = 2;
+  if(van(hi) > 0) return null;
+  for(let k = 0; k < 160; k++){ const m = (lo + hi) / 2; if(van(m) > 0) lo = m; else hi = m; }
+  return (lo + hi) / 2;
+}
+const tirAnual = m => m === null ? null : Math.pow(1 + m, 12) - 1;
+
+/* Curva de obra: lenta al principio, pico en el medio, baja al final.
+   Reparte el costo mes a mes, que es lo que define el costo financiero. */
+function curvaObra(meses){
+  const p = [];
+  for(let i = 0; i < meses; i++){
+    const x = (i + 0.5) / meses;
+    p.push(Math.exp(-Math.pow((x - 0.5) / 0.28, 2) / 2));
+  }
+  const s = p.reduce((a, b) => a + b, 0);
+  return p.map(v => v / s);
+}
+
+/* El inversor aporta lo que se gasta y cobra al vender. Si entra plata
+   hoy, cubre los egresos siguientes y por esa parte no se le pide nada. */
+function flujoVenta(base, ingresoHoy, m2Resignados){
+  const aportes = base.egresos.slice();
+  let resto = ingresoHoy;
+  for(let i = base.mesHoy; i < aportes.length && resto > 0; i++){
+    const usa = Math.min(aportes[i], resto);
+    aportes[i] -= usa;
+    resto -= usa;
+  }
+  const flujo = aportes.map(a => -a);
+  if(resto > 0) flujo[base.mesHoy] = (flujo[base.mesHoy] || 0) + resto;
+  flujo[base.mesVenta] = (flujo[base.mesVenta] || 0) +
+    (base.vendible - m2Resignados) * base.precioFinal;
+  return { flujo, aportes };
+}
+
+function calcularVentaHoy(o, c){
+  const us = cuadroUnidades(o.id).filter(f => f.u.estado === 'disponible');
+  if(!us.length || !c || !c.total) return null;
+
+  const elegida = us.find(f => f.u.id === ventaHoy.unidad) || us[0];
+  const sup = elegida.superficie;
+
+  const meses   = c.a.plazo_meses || 24;
+  const mesHoy  = mesesDeObra(o, meses);
+  const mesVenta = ventaHoy.mesVenta ?? (meses + 3);
+  const precioFinal = ventaHoy.precioFinal ?? (c.porVendible ? Math.round(c.porVendible * 1.32) : 0);
+  const rRef = (ventaHoy.tasaRef ?? 8) / 100;
+
+  const egresos = new Array(Math.max(mesVenta, meses) + 1).fill(0);
+  curvaObra(meses).forEach((p, i) => egresos[i] += c.total * p);
+
+  const base = { egresos, mesHoy, mesVenta, vendible: c.vendible, precioFinal };
+
+  const costoAsignado  = c.total * elegida.porcentual / 100;
+  const valorTerminado = sup * precioFinal;
+
+  const min = Math.max(0, Math.round(costoAsignado * 0.55 / 1000) * 1000);
+  const max = Math.round(valorTerminado * 1.02 / 1000) * 1000;
+  const precio = ventaHoy.precio ?? Math.round((costoAsignado + valorTerminado) / 2);
+
+  const sin = flujoVenta(base, 0, 0);
+  const con = flujoVenta(base, precio, sup);
+  const tSin = tirAnual(tirMensual(sin.flujo));
+  const tCon = tirAnual(tirMensual(con.flujo));
+
+  /* Piso: el precio donde la tasa queda igual que sin vender */
+  let piso = null;
+  if(tSin !== null){
+    let lo = 0, hi = valorTerminado * 2;
+    for(let k = 0; k < 70; k++){
+      const m = (lo + hi) / 2;
+      const t = tirAnual(tirMensual(flujoVenta(base, m, sup).flujo));
+      if(t === null || t < tSin) lo = m; else hi = m;
+    }
+    piso = (lo + hi) / 2;
+  }
+
+  const faltaEjecutar = egresos.slice(mesHoy).reduce((a, b) => a + b, 0);
+  const aportesMenos = sin.aportes.slice(mesHoy).reduce((a, b) => a + b, 0)
+                     - con.aportes.slice(mesHoy).reduce((a, b) => a + b, 0);
+  let mesesCubiertos = 0, acum = 0;
+  for(let i = mesHoy; i < egresos.length; i++){
+    acum += egresos[i];
+    if(acum <= precio) mesesCubiertos++; else break;
+  }
+
+  /* El costo que esta unidad no absorbe lo pagan las que quedan */
+  const m2Restantes = c.vendible - sup;
+  const costoM2Proyecto  = c.vendible ? c.total / c.vendible : 0;
+  const costoM2Restantes = m2Restantes ? (c.total - precio) / m2Restantes : 0;
+
+  /* El costo de cada unidad sale de su porcentual sobre las unidades
+     cargadas: si no están todas, cada una absorbe de más */
+  const supCargada = cuadroUnidades(o.id).reduce((s, f) => s + f.superficie, 0);
+  const cobertura = c.vendible ? supCargada / c.vendible : 1;
+
+  return { us, elegida, sup, meses, supCargada, cobertura, mesHoy, mesVenta, precioFinal, rRef, base,
+    costoAsignado, valorTerminado, precio, min, max, tSin, tCon, piso,
+    faltaEjecutar, aportesMenos, mesesCubiertos,
+    costoM2Proyecto, costoM2Restantes,
+    descuento: valorTerminado ? (1 - precio / valorTerminado) * 100 : 0 };
+}
+
+/* Meses transcurridos desde el inicio de obra cargado en la ficha */
+function mesesDeObra(o, tope){
+  const f = fichaDe(o.id);
+  if(!f.inicio) return Math.min(Math.round(tope / 2), tope);
+  const ini = new Date(f.inicio + 'T00:00:00');
+  const hoyD = new Date(hoy() + 'T00:00:00');
+  const m = (hoyD.getFullYear() - ini.getFullYear()) * 12 + (hoyD.getMonth() - ini.getMonth());
+  return Math.min(Math.max(1, m), tope);
+}
+
+function vVenderHoy(o, c){
+  const d = calcularVentaHoy(o, c);
+
+  if(!d) return `<div class="vacio" style="text-align:left">
+    <strong>Simular la venta de una unidad.</strong>
+    <p style="font-size:12.5px;color:var(--gris);margin:6px 0 0">
+      Hace falta el análisis del anteproyecto cargado y al menos una unidad disponible
+      en la solapa Unidades, con su superficie y su coeficiente de valor.</p>
+  </div>`;
+
+  const bajoCosto = d.precio < d.costoAsignado;
+  const conviene  = d.piso !== null && d.precio >= d.piso;
+  const mejora    = d.tCon !== null && d.tSin !== null && d.tCon >= d.tSin;
+  const ubicar = v => Math.max(0, Math.min(100, (v - d.min) / ((d.max - d.min) || 1) * 100));
+
+  const incompleto = d.cobertura < 0.9 || d.cobertura > 1.1;
+
+  return `
+  ${incompleto ? `<div class="vacio" style="text-align:left;border-style:solid;
+    border-color:var(--ambar);color:var(--tinta);margin-bottom:16px">
+    <strong>Los números todavía no son confiables.</strong>
+    Las unidades cargadas suman ${m2f(d.supCargada)} y el anteproyecto tiene
+    ${m2f(c.vendible)} vendibles. El costo de cada unidad se reparte entre las
+    unidades cargadas, así que hasta completarlas en la solapa Unidades cada una
+    absorbe más (o menos) de lo que le toca.
+  </div>` : ''}
+  <p class="sub" style="margin-top:0">Qué le hace al proyecto cobrar una unidad al contado
+  hoy, en vez de venderla terminada. Es una pantalla interna: no aparece en la rendición
+  del inversor.</p>
+
+  <h3>Supuestos</h3>
+  <div class="campos no-imprimir">
+    <div class="campo"><label for="vh-unidad">Unidad</label>
+      <select id="vh-unidad" onchange="setVentaHoy('unidad', this.value)">
+        ${d.us.map(f => `<option value="${f.u.id}" ${f.u.id === d.elegida.u.id ? 'selected' : ''}>${
+          esc(f.u.codigo)} · ${m2f(f.superficie)}</option>`).join('')}
+      </select></div>
+    <div class="campo"><label for="vh-final">Precio terminado USD/m²</label>
+      <input id="vh-final" type="number" step="50" value="${Math.round(d.precioFinal)}"
+        onchange="setVentaHoy('precioFinal', this.value)">
+      <span class="ayuda">lo que se espera cobrar al cierre</span></div>
+    <div class="campo"><label for="vh-mes">Venta final en el mes</label>
+      <input id="vh-mes" type="number" step="1" min="1" max="96" value="${d.mesVenta}"
+        onchange="setVentaHoy('mesVenta', this.value)">
+      <span class="ayuda">la obra va por el mes ${d.mesHoy} de ${d.meses}</span></div>
+    <div class="campo"><label for="vh-tasa">Tasa de referencia anual %</label>
+      <input id="vh-tasa" type="number" step="0.5" value="${(d.rRef * 100).toFixed(1)}"
+        onchange="setVentaHoy('tasaRef', this.value)"></div>
+  </div>
+
+  <div class="acciones no-imprimir" style="margin:20px 0 6px;align-items:baseline">
+    <label for="vh-precio" style="font-size:11px;color:var(--gris)">Precio al contado hoy</label>
+    <strong class="num" id="vh-precio-txt" style="font-size:21px;font-weight:400;letter-spacing:-.04em">${fmtUsd(d.precio)}</strong>
+    <span class="pct" style="margin:0">${fmtUsd2(d.precio / d.sup)} el m² ·
+      ${fmtPct(d.descuento)} bajo el valor terminado</span>
+  </div>
+  <input id="vh-precio" type="range" min="${d.min}" max="${d.max}" step="500"
+    value="${Math.round(d.precio)}" class="no-imprimir"
+    oninput="document.getElementById('vh-precio-txt').textContent = fmtUsd(+this.value)"
+    onchange="setVentaHoy('precio', this.value)"
+    style="width:100%;accent-color:var(--naranja);margin:0">
+  <div class="no-imprimir" style="position:relative;height:62px;margin-bottom:10px">
+    ${[['costo de la unidad', d.costoAsignado, 'var(--rojo)'],
+       ['piso', d.piso, 'var(--naranja)']].filter(m => m[1] !== null).map(([t, v, col], i, todas) => {
+      // Si las dos marcas quedan cerca, la segunda baja para que no se pisen
+      const cerca = i === 1 && Math.abs(ubicar(v) - ubicar(todas[0][1])) < 22;
+      return `
+      <div style="position:absolute;left:${ubicar(v).toFixed(2)}%;transform:translateX(-50%);
+        text-align:center;white-space:nowrap">
+        <div style="width:1px;height:${cerca ? 36 : 7}px;margin:0 auto 3px;background:${col}"></div>
+        <span style="font-size:9.5px;color:${col}">${t}<br>${fmtUsd(v)}</span>
+      </div>`; }).join('')}
+  </div>
+
+  <div class="fila" style="margin-top:28px">
+    <div class="kpi"><p class="r">Piso para vender hoy</p>
+      <p class="v num">${d.piso === null ? '—' : fmtUsd(d.piso)}</p>
+      <p class="s">${d.piso === null ? 'el proyecto no recupera lo invertido'
+        : fmtUsd2(d.piso / d.sup) + ' el m²'}</p></div>
+    <div class="kpi ${mejora ? '' : 'alerta'}"><p class="r">Tasa del proyecto</p>
+      <p class="v num">${d.tCon === null ? '—' : fmtPct(d.tCon * 100)}</p>
+      <p class="s">contra ${d.tSin === null ? '—' : fmtPct(d.tSin * 100)} sin vender hoy</p></div>
+    <div class="kpi"><p class="r">Aportes que no se piden</p>
+      <p class="v num">${fmtUsd(d.aportesMenos)}</p>
+      <p class="s">${d.mesesCubiertos} ${d.mesesCubiertos === 1 ? 'mes' : 'meses'} de obra cubiertos</p></div>
+    <div class="kpi"><p class="r">Metros que se resignan</p>
+      <p class="v num">${m2f(d.sup)}</p>
+      <p class="s">valdrían ${fmtUsd(d.valorTerminado)} terminados</p></div>
+    <div class="kpi ${d.costoM2Restantes <= d.costoM2Proyecto ? '' : 'alerta'}">
+      <p class="r">Costo del m² que queda</p>
+      <p class="v num">${fmtUsd2(d.costoM2Restantes)}</p>
+      <p class="s">contra ${fmtUsd2(d.costoM2Proyecto)} del proyecto entero</p></div>
+  </div>
+
+  ${bajoCosto ? `<div class="vacio" style="text-align:left;border-color:var(--rojo);
+    border-style:solid;background:var(--rojo-luz, #F9EDEA);color:var(--rojo)">
+    <strong style="color:var(--rojo)">Estás vendiendo por debajo del costo de la unidad.</strong>
+    Esa unidad consumió ${fmtUsd(d.costoAsignado)} del emprendimiento y entrarían
+    ${fmtUsd(d.precio)}. La diferencia de ${fmtUsd(d.costoAsignado - d.precio)} la terminan
+    pagando las unidades que quedan: su costo pasa de ${fmtUsd2(d.costoM2Proyecto)}
+    a ${fmtUsd2(d.costoM2Restantes)} el metro.
+    Se hace cuando la alternativa es frenar la obra, no para apurar una venta.
+  </div>` : `<p class="sub">${conviene
+    ? `A ${fmtUsd(d.precio)} conviene vender: la plata que entra hoy evita
+       ${fmtUsd(d.aportesMenos)} de aportes y adelanta el recupero, y eso compensa los
+       ${fmtUsd(d.valorTerminado - d.precio)} de valor que se resignan.`
+    : `A ${fmtUsd(d.precio)} no conviene: faltan ${fmtUsd(d.piso - d.precio)} para llegar
+       al piso de ${fmtUsd(d.piso)}, que son ${fmtUsd2(d.piso / d.sup)} el metro.`}</p>`}
+
+  <h3>Los tres precios</h3>
+  <table><thead><tr><th>Precio</th><th class="der">Importe</th><th class="der">Por m²</th>
+    <th class="ocultar-chico">Qué significa</th></tr></thead><tbody>
+    <tr><td>Costo de la unidad</td>
+      <td class="der num">${fmtUsd(d.costoAsignado)}</td>
+      <td class="der num">${fmtUsd2(d.costoAsignado / d.sup)}</td>
+      <td class="ocultar-chico">Lo que esta unidad consumió del emprendimiento. Por debajo,
+        el resto de los inversores subsidia la venta.</td></tr>
+    <tr><td>Piso de indiferencia</td>
+      <td class="der num">${d.piso === null ? '—' : fmtUsd(d.piso)}</td>
+      <td class="der num">${d.piso === null ? '—' : fmtUsd2(d.piso / d.sup)}</td>
+      <td class="ocultar-chico">El costo más la parte del margen que hace falta para que la
+        tasa no baje, ya descontada la ventaja de cobrar antes.</td></tr>
+    <tr><td>Valor terminado</td>
+      <td class="der num">${fmtUsd(d.valorTerminado)}</td>
+      <td class="der num">${fmtUsd2(d.precioFinal)}</td>
+      <td class="ocultar-chico">Lo que se espera cobrar al cierre, ${d.mesVenta - d.mesHoy}
+        meses más adelante.</td></tr>
+  </tbody></table>
+  ${d.piso === null ? '' : d.piso >= d.costoAsignado
+    ? `<p class="sub">Acá el piso queda por encima del costo: vender al costo recupera lo que
+      la unidad consumió, pero regala los ${fmtUsd(d.valorTerminado - d.costoAsignado)} de
+      margen que iba a dejar. El piso devuelve la parte de ese margen que la ventaja de
+      cobrar antes no alcanza a compensar.</p>`
+    : `<p class="sub">Acá el piso queda por debajo del costo: cobrar
+      ${d.mesVenta - d.mesHoy} meses antes vale más que el margen que se resigna, así que la
+      tasa del inversor no baja aunque la unidad se venda bajo su costo. Igual, por debajo
+      del costo el faltante lo pagan las unidades que quedan (ver el costo del m² que queda).</p>`}
+
+  <h3>Mes a mes, con y sin la venta</h3>
+  <table><thead><tr><th>Mes</th><th class="der">Egreso de obra</th>
+    <th class="der">Aporte sin vender</th><th class="der">Aporte vendiendo</th>
+    <th class="der ocultar-chico">Diferencia</th></tr></thead><tbody>
+    ${(() => {
+      const sin = flujoVenta(d.base, 0, 0).aportes;
+      const con = flujoVenta(d.base, d.precio, d.sup).aportes;
+      const filas = [];
+      for(let i = 0; i <= d.mesVenta; i++){
+        if(!d.base.egresos[i] && i !== d.mesVenta) continue;
+        const dif = sin[i] - con[i];
+        filas.push(`<tr>
+          <td class="num">${i}${i === d.mesHoy ? ' <span class="chip a">hoy</span>' : ''}</td>
+          <td class="der num">${d.base.egresos[i] ? fmtUsd(d.base.egresos[i]) : '—'}</td>
+          <td class="der num">${sin[i] ? fmtUsd(sin[i]) : '—'}</td>
+          <td class="der num">${con[i] ? fmtUsd(con[i]) : '—'}</td>
+          <td class="der num ocultar-chico">${dif > 1 ? '−' + fmtUsd(dif).replace('US$ ', '') : '—'}</td>
+        </tr>`);
+      }
+      return filas.join('');
+    })()}
+  </tbody></table>
+  <p class="sub">Desde el mes en curso, la plata que entra hoy va cubriendo los egresos uno
+  por uno: esos son los aportes que no hay que pedir. Cuando se agota, se vuelve a pedir
+  como antes.</p>
+
+  <p class="sub" style="margin-top:22px">Resultado antes de impuestos. El precio terminado
+  de ${fmtUsd2(d.precioFinal)} el metro es un supuesto que todavía no se validó: si el
+  mercado está más abajo, el piso de hoy también baja. El cálculo supone que el resto de
+  las unidades se vende en el mes ${d.mesVenta}.</p>`;
+}
