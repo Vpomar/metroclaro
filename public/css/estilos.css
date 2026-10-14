@@ -538,7 +538,7 @@ td .medida:only-child{margin-top:9px}
   padding:1px 4px;border:1px solid var(--linea-fuerte);border-radius:3px;margin-right:4px}
 
 .atajo{
-  display:inline-flex;align-items:center;gap:7px;margin-left:auto;
+  display:inline-flex;align-items:center;gap:7px;
   padding:5px 7px 5px 10px;background:none;
   border:1px solid var(--linea-fuerte);border-radius:var(--radio);
   color:var(--tinta-3);font:inherit;font-size:12px;cursor:pointer;
@@ -546,9 +546,10 @@ td .medida:only-child{margin-top:9px}
 }
 .atajo:hover{border-color:var(--tinta-3);color:var(--tinta-2)}
 
+/* Empuja al par (tema y buscador) al extremo derecho de la barra */
 .tema{
   display:inline-flex;align-items:center;justify-content:center;
-  width:30px;height:30px;flex:0 0 auto;
+  width:30px;height:30px;flex:0 0 auto;margin-left:auto;
   background:none;border:1px solid transparent;border-radius:var(--radio);
   color:var(--tinta-3);cursor:pointer;
   transition:color .14s ease,border-color .14s ease;
@@ -615,7 +616,6 @@ body:has(.franja-entorno) .barra{top:21px}
   .tabs{margin:0 -14px;padding:0 10px}
   .tab{padding:9px 10px 11px}
   .atajo{display:none}
-  .tema{margin-left:auto}
 
   .cuerpo{padding:22px 14px 80px}
   .pizarra{grid-template-columns:1fr;gap:20px;padding:20px}
