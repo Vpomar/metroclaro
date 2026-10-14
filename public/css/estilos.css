@@ -38,6 +38,75 @@
   --plano:#3A6B8A;
 
   --radio:4px;
+
+  --sombra-modal:0 26px 70px -20px rgba(0,0,0,.4);
+  --sombra-paleta:0 20px 60px -16px rgba(0,0,0,.28);
+  color-scheme:light;
+}
+
+/* ---------------------------------------------------------------
+   De noche
+
+   El papel se apaga y la pizarra sube un punto, para que siga
+   leyéndose como una superficie aparte y no como el fondo.
+
+   El naranja de marca no cambia. Lo que sí cambia son los enlaces y
+   los textos de acento: en claro van oscuros y acá necesitan ir
+   claros para leerse.
+   --------------------------------------------------------------- */
+@media (prefers-color-scheme: dark){
+  :root:not([data-tema="claro"]){
+    --hoja:#121211;
+    --chrome:#171614;
+    --papel:#171614;
+    --blanco:#121211;
+    --tinta:#EDEBE7;
+    --tinta-2:#A8A39B;
+    --tinta-3:#7E7A73;
+    --gris:#7E7A73;
+    --linea:#262421;
+    --filete:#262421;
+    --linea-fuerte:#35322E;
+    --filete-2:#35322E;
+    --noche:#1E1D1B;
+    --naranja-t:#F2924F;
+    --azul-oscuro:#F2924F;
+    --naranja-luz:#2A1F16;
+    --azul-claro:#2A1F16;
+    --verde:#6FBF95;
+    --rojo:#E08571;
+    --ambar:#D9A441;
+    --plano:#79A8C4;
+    --sombra-modal:0 26px 70px -24px rgba(0,0,0,.85);
+    --sombra-paleta:0 20px 60px -20px rgba(0,0,0,.8);
+    color-scheme:dark;
+  }
+}
+:root[data-tema="oscuro"]{
+  --hoja:#121211;
+  --chrome:#171614;
+  --papel:#171614;
+  --blanco:#121211;
+  --tinta:#EDEBE7;
+  --tinta-2:#A8A39B;
+  --tinta-3:#7E7A73;
+  --gris:#7E7A73;
+  --linea:#262421;
+  --filete:#262421;
+  --linea-fuerte:#35322E;
+  --filete-2:#35322E;
+  --noche:#1E1D1B;
+  --naranja-t:#F2924F;
+  --azul-oscuro:#F2924F;
+  --naranja-luz:#2A1F16;
+  --azul-claro:#2A1F16;
+  --verde:#6FBF95;
+  --rojo:#E08571;
+  --ambar:#D9A441;
+  --plano:#79A8C4;
+  --sombra-modal:0 26px 70px -24px rgba(0,0,0,.85);
+  --sombra-paleta:0 20px 60px -20px rgba(0,0,0,.8);
+  color-scheme:dark;
 }
 
 *{box-sizing:border-box}
@@ -186,6 +255,12 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--hoja
   background:var(--noche);color:#F2F1EE;border-radius:8px;
   padding:24px 26px 22px;margin-bottom:30px;
   display:grid;grid-template-columns:minmax(250px,.82fr) 1.18fr;gap:28px;
+  border:1px solid transparent;
+}
+/* Sobre fondo claro se despega sola; sobre fondo oscuro necesita filete */
+:root[data-tema="oscuro"] .pizarra{border-color:var(--linea-fuerte)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-tema="claro"]) .pizarra{border-color:var(--linea-fuerte)}
 }
 .pizarra .rot{margin:0 0 9px;font-size:11px;color:rgba(242,241,238,.5);font-weight:400}
 .pizarra .gran{
@@ -314,7 +389,7 @@ td .medida:only-child{margin-top:9px}
 .modal{
   background:var(--hoja);border-radius:8px;width:100%;max-width:560px;
   border:1px solid var(--linea-fuerte);
-  box-shadow:0 26px 70px -20px rgba(0,0,0,.4);
+  box-shadow:var(--sombra-modal);
   animation:surge .15s cubic-bezier(.2,.8,.3,1);
 }
 .modal header{padding:18px 22px 14px;border-bottom:1px solid var(--linea);background:var(--hoja)}
@@ -416,6 +491,10 @@ td .medida:only-child{margin-top:9px}
   animation:asoma .17s cubic-bezier(.2,.8,.3,1);
 }
 .aviso-flotante.mal{background:var(--rojo)}
+:root[data-tema="oscuro"] .aviso-flotante{border:1px solid var(--linea-fuerte)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-tema="claro"]) .aviso-flotante{border:1px solid var(--linea-fuerte)}
+}
 @keyframes asoma{from{opacity:0;transform:translate(-50%,8px)}}
 
 /* ---------------------------------------------------------------
@@ -431,7 +510,7 @@ td .medida:only-child{margin-top:9px}
 .paleta-caja{
   width:100%;max-width:520px;background:var(--hoja);
   border:1px solid var(--linea-fuerte);border-radius:8px;overflow:hidden;
-  box-shadow:0 20px 60px -16px rgba(0,0,0,.28);
+  box-shadow:var(--sombra-paleta);
   animation:surge .14s cubic-bezier(.2,.8,.3,1);
 }
 .paleta-busca{display:flex;align-items:center;gap:10px;padding:2px 14px;
@@ -466,6 +545,24 @@ td .medida:only-child{margin-top:9px}
   transition:border-color .12s ease,color .12s ease;
 }
 .atajo:hover{border-color:var(--tinta-3);color:var(--tinta-2)}
+
+.tema{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;flex:0 0 auto;
+  background:none;border:1px solid transparent;border-radius:var(--radio);
+  color:var(--tinta-3);cursor:pointer;
+  transition:color .14s ease,border-color .14s ease;
+}
+.tema:hover{color:var(--tinta);border-color:var(--linea-fuerte)}
+/* De día se ve la luna, de noche el sol: muestra adónde vas */
+.tema .sol{display:none}
+.tema .luna{display:block}
+:root[data-tema="oscuro"] .tema .luna{display:none}
+:root[data-tema="oscuro"] .tema .sol{display:block}
+@media (prefers-color-scheme: dark){
+  :root:not([data-tema="claro"]) .tema .luna{display:none}
+  :root:not([data-tema="claro"]) .tema .sol{display:block}
+}
 .atajo .tecla{margin:0}
 
 /* ---------------------------------------------------------------
@@ -518,6 +615,7 @@ body:has(.franja-entorno) .barra{top:21px}
   .tabs{margin:0 -14px;padding:0 10px}
   .tab{padding:9px 10px 11px}
   .atajo{display:none}
+  .tema{margin-left:auto}
 
   .cuerpo{padding:22px 14px 80px}
   .pizarra{grid-template-columns:1fr;gap:20px;padding:20px}
