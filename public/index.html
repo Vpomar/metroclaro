@@ -4,7 +4,15 @@
 <meta charset="utf-8">
 <title>Administración de obras</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#17171A">
+<meta name="theme-color" content="#FFFFFF">
+<script>
+  /* El tema se aplica antes de dibujar, para que no se vea un destello
+     claro al abrir. La lógica del botón está en js/nucleo/tema.js */
+  try {
+    var t = localStorage.getItem('metroclaro:tema');
+    if (t) document.documentElement.dataset.tema = t;
+  } catch (e) {}
+</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="img/icono-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
@@ -77,6 +85,15 @@
         <h2 id="titulo">—</h2>
         <button class="link solo-equipo" id="btn-renombrar" onclick="renombrarObra()">Renombrar</button>
         <button class="link solo-admin" id="btn-borrar-obra" onclick="eliminarObra()">Eliminar obra</button>
+        <button class="tema" onclick="cambiarTema()" aria-label="Cambiar entre claro y oscuro">
+          <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+            <g class="sol" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+              <circle cx="8" cy="8" r="3.1"/>
+              <path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9L13 13M13 3l-1.1 1.1M4.1 11.9L3 13"/>
+            </g>
+            <path class="luna" d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z" fill="currentColor"/>
+          </svg>
+        </button>
         <button class="atajo" onclick="abrirBuscador()" aria-label="Buscar">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.4"/>
@@ -115,6 +132,7 @@
 <script src="js/nucleo/cotizacion.js"></script>
 <script src="js/nucleo/render.js"></script>
 <script src="js/nucleo/buscador.js"></script>
+<script src="js/nucleo/tema.js"></script>
 <script src="js/vistas/panel-resumen.js"></script>
 <script src="js/vistas/unidades.js"></script>
 <script src="js/vistas/analisis.js"></script>
