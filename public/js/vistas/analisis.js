@@ -415,6 +415,21 @@ function mesesDeObra(o, tope){
 }
 
 function vVenderHoy(o, c){
+  /* Con unidades a medio cargar el porcentual miente, y con él el costo
+     asignado y el piso. Mejor no mostrar números que no sirven. */
+  const cob = typeof coberturaUnidades === 'function' ? coberturaUnidades(o.id) : null;
+  if(cob && cob.pct < 98 && cob.cargada > 0){
+    return `<div class="vacio" style="text-align:left;border-style:solid;
+      border-color:var(--ambar);color:var(--ambar)">
+      <strong style="color:var(--ambar)">Faltan unidades por cargar.</strong>
+      Hay ${m2f(cob.cargada)} cargados contra ${m2f(cob.total)} del anteproyecto.
+      Con la carga incompleta, el costo asignado de cada unidad sale mal: se reparte
+      el total del emprendimiento entre las pocas que hay, y el piso de venta queda
+      muy por encima del real.
+      <br><br>Completalas en la solapa Unidades y volvé.
+    </div>`;
+  }
+
   const d = calcularVentaHoy(o, c);
 
   if(!d) return `<div class="vacio" style="text-align:left">
