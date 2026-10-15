@@ -26,7 +26,8 @@ function vUnidades(o){
         Cargá cada departamento, cochera o local con su superficie y su coeficiente de valor.
         El porcentual de cada uno se calcula solo, y desde acá se asignan a inversores
         o se vinculan con una venta.</p>
-      ${puedeEditar()?`<button class="btn" onclick="formUnidad()">Cargar la primera unidad</button>`:''}
+      ${puedeEditar()?`<button class="btn" onclick="formGenerarUnidades()">Copiar del anteproyecto</button>
+        <button class="btn sec" onclick="formUnidad()">Cargar una a mano</button>`:''}
     </div>`;
   }
 
@@ -34,9 +35,23 @@ function vUnidades(o){
   const supTotal = filas.reduce((s,f)=>s+f.superficie,0);
   const costoUnidad = f => c && c.total ? c.total * f.porcentual/100 : 0;
 
+  const cob = coberturaUnidades(o.id);
+  const incompleta = cob && cob.pct < 98;
+
   return `
+  ${incompleta ? `<div class="vacio" style="text-align:left;border-style:solid;
+    border-color:var(--ambar);color:var(--ambar);margin-bottom:20px">
+    <strong style="color:var(--ambar)">Falta cargar unidades.</strong>
+    Hay ${m2f(cob.cargada)} cargados contra ${m2f(cob.total)} del anteproyecto,
+    o sea ${fmtPct(cob.pct)}. Hasta completarlas, el porcentual y el costo asignado
+    de cada unidad salen mal: se reparte el total del emprendimiento entre las pocas
+    que hay.
+    ${puedeEditar() ? `<br><br><button class="btn sec" onclick="formGenerarUnidades()">Copiar del anteproyecto</button>` : ''}
+  </div>` : ''}
+
   ${puedeEditar()?`<div class="acciones">
     <button class="btn" onclick="formUnidad()">Agregar unidad</button>
+    <button class="btn sec" onclick="formGenerarUnidades()">Copiar del anteproyecto</button>
     <button class="btn sec" onclick="exportarUnidades()">Exportar a Excel</button>
   </div>`:''}
 
@@ -204,3 +219,121 @@ function exportarUnidades(){
     `unidades-${o.nombre.replace(/\s+/g,'-').toLowerCase()}`);
 }
 
+
+/* =====================================================================
+   Copiar las unidades del anteproyecto
+
+   Los niveles ya tienen su superficie y cuántas unidades hay en cada
+   uno, así que el sistema puede crearlas solo. Es la forma de que la
+   carga quede completa: con unidades a medio cargar, el porcentual de
+   cada una sale mal y el costo asignado también.
+
+   El coeficiente queda en 1,00 a propósito. Que un cuarto piso valga
+   más que un primero es una decisión comercial, no una fórmula.
+   ===================================================================== */
+
+const LETRAS_UNIDAD = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
+
+/* Qué unidades faltan, comparando con los niveles del anteproyecto */
+function unidadesDelAnteproyecto(obraId){
+  const ya = unidadesDe(obraId).map(u => u.codigo.trim().toLowerCase());
+  const propuestas = [];
+
+  nivelesDe(obraId).forEach(n => {
+    const cuantas = +n.unidades || 0;
+    if(!cuantas) return;
+    const sup = (+n.cubierta || 0) + (+n.semicubierta || 0) + (+n.comun || 0);
+    for(let i = 0; i < cuantas; i++){
+      const codigo = cuantas === 1 ? n.nombre : `${n.nombre} ${LETRAS_UNIDAD[i] || (i + 1)}`;
+      propuestas.push({
+        codigo,
+        nivel_id: n.id,
+        nivel: n.nombre,
+        sup: Math.round(sup / cuantas * 100) / 100,
+        repartida: cuantas > 1,
+        existe: ya.includes(codigo.trim().toLowerCase())
+      });
+    }
+  });
+
+  /* Las cocheras van aparte: no son unidades de un nivel */
+  nivelesDe(obraId).forEach(n => {
+    const m2 = (+n.coch_ss || 0) + (+n.coch_pb || 0);
+    if(m2 > 0) propuestas.push({
+      codigo: `Cocheras ${n.nombre}`, nivel_id: n.id, nivel: n.nombre,
+      sup: m2, repartida: false, cochera: true,
+      existe: ya.includes(`cocheras ${n.nombre}`.trim().toLowerCase())
+    });
+  });
+
+  return propuestas;
+}
+
+/* Cuánto de la superficie vendible del análisis está cubierto por las
+   unidades cargadas. Si no llega, el porcentual de cada una miente. */
+function coberturaUnidades(obraId){
+  const c = computo(obraId);
+  if(!c || !c.vendible) return null;
+  const cargada = unidadesDe(obraId)
+    .reduce((s, u) => s + (+u.sup_cubierta || 0) + (+u.sup_semicubierta || 0) + (+u.sup_comun || 0), 0);
+  const total = c.totalM2 || c.vendible;
+  return { cargada, total, pct: total ? cargada / total * 100 : 0 };
+}
+
+function formGenerarUnidades(){
+  const o = obra();
+  const propuestas = unidadesDelAnteproyecto(o.id);
+  const faltan = propuestas.filter(p => !p.existe);
+  const repartidas = faltan.filter(p => p.repartida).length;
+
+  if(!nivelesDe(o.id).length){
+    return alert('Primero cargá los niveles en la solapa Análisis: de ahí salen las unidades.');
+  }
+  if(!propuestas.length){
+    return alert('Ninguno de los niveles tiene unidades cargadas. Completá la columna Unidades en el Análisis.');
+  }
+  if(!faltan.length){
+    return alert('Las unidades del anteproyecto ya están cargadas. No hay nada para copiar.');
+  }
+
+  modal('Copiar del anteproyecto', `
+    <div class="campo ancho"><span class="ayuda">
+      Se van a crear <strong>${faltan.length}</strong> unidad${faltan.length === 1 ? '' : 'es'}
+      a partir de los niveles del análisis. Las que ya existen no se tocan.
+    </span></div>
+    <div class="campo ancho">
+      <table><thead><tr><th>Unidad</th><th>Nivel</th><th class="der">Superficie</th></tr></thead>
+      <tbody>
+        ${propuestas.map(p => `<tr style="${p.existe ? 'opacity:.45' : ''}">
+          <td>${esc(p.codigo)}${p.existe ? ' <span class="chip">ya existe</span>' : ''}</td>
+          <td>${esc(p.nivel)}</td>
+          <td class="der num">${m2f(p.sup)}</td></tr>`).join('')}
+      </tbody></table>
+    </div>
+    <div class="campo ancho"><span class="ayuda">
+      El coeficiente de valor queda en <strong>1,00</strong> en todas: que un piso alto
+      valga más es una decisión tuya, no una fórmula. Se ajusta después, unidad por unidad.
+      ${repartidas ? `<br><br>En los niveles con más de una unidad la superficie se reparte
+        en partes iguales. Si hay un contrafrente más chico, corregilo a mano.` : ''}
+    </span></div>`,
+    async () => {
+      const filas = faltan.map((p, i) => ({
+        obra_id: o.id,
+        nivel_id: p.nivel_id,
+        codigo: p.codigo,
+        tipo: p.cochera ? 'Cochera' : 'Departamento',
+        sup_cubierta: p.sup,
+        sup_semicubierta: 0,
+        sup_comun: 0,
+        coeficiente: 1,
+        estado: 'disponible',
+        orden: (unidadesDe(o.id).length + i) * 10
+      }));
+      document.getElementById('ok').disabled = true;
+      cerrar();
+      const { error } = await sb.from('unidades').insert(filas);
+      if(error) return aviso('No se pudieron crear: ' + error.message, true);
+      aviso(`${filas.length} unidad${filas.length === 1 ? '' : 'es'} creada${filas.length === 1 ? '' : 's'}`);
+      await cargarDatos();
+    });
+}
