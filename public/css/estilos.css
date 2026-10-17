@@ -123,9 +123,14 @@ body{
 .oculto{display:none!important}
 :focus-visible{outline:1.5px solid var(--naranja);outline-offset:2px;border-radius:2px}
 
-.logo{font-weight:700;letter-spacing:-.04em;line-height:1;white-space:nowrap}
-.logo b{color:var(--naranja);font-weight:700}
-.logo i{color:currentColor;font-style:normal;font-weight:700}
+/* El contraste lo hace el peso, no el color: así se lee como una sola
+   palabra. El naranja queda concentrado en el punto. */
+.logo{font-weight:700;letter-spacing:-.045em;line-height:1;white-space:nowrap}
+.logo b{color:currentColor;font-weight:700}
+.logo i{color:var(--tinta-2);font-style:normal;font-weight:300}
+.logo s{color:var(--naranja);text-decoration:none}
+/* Chico el trazo fino casi desaparece, así que sube a 400 */
+.logo.chico i{font-weight:400}
 
 /* ---------------------------------------------------------------
    Acceso
@@ -145,7 +150,9 @@ body{
 }
 .marca-acceso{position:relative;z-index:2;text-align:center}
 .marca-acceso .logo{font-size:clamp(32px,6.5vw,46px)}
-.marca-acceso .logo i{color:#F2F1EE}
+/* Sobre el fondo oscuro del acceso, un gris claro: el contraste de
+   peso se mantiene y la palabra no compite con "metro" */
+.marca-acceso .logo i{color:rgba(242,241,238,.68)}
 .marca-acceso p{margin:15px 0 0;font-size:11px;font-weight:400;
   letter-spacing:.2em;color:rgba(242,241,238,.45)}
 
