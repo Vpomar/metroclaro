@@ -38,6 +38,26 @@ Todos los hallazgos se verificaron contra producción; ninguno es teórico.
 | — | — | Se podía asignar una caja de otra obra | ✅ Resuelto | `integridad_fase3` |
 | N-01 | Media | El rol `carga` podía **borrar** cuotas, participaciones, fichas de inversores, cajas, unidades, presupuestos y catálogos, aunque la regla del negocio es "carga no borra" | ✅ Resuelto | `carga_no_borra` + `app.js` (presupuesto en 0, "Quitar de la obra" solo admin) |
 
+## Hardening de cumplimiento · noviembre 2026
+
+Revisión contra SOC 2, ISO 27001 e ISO 27701 (ver
+[10 · Cumplimiento](10-cumplimiento.md)).
+
+| ID | Severidad | Hallazgo | Estado | Dónde se corrigió |
+|---|---|---|---|---|
+| HC-01 | Media | El historial se podía modificar o borrar con la clave de servicio o desde el SQL editor | ✅ Resuelto | `hardening_cumplimiento` |
+| HC-02 | Media | Sin regla de retención del historial, que guarda datos personales | ✅ Resuelto | `hardening_cumplimiento` (10 años) |
+| HC-03 | Media | Sin procedimiento para el derecho de acceso del titular | ✅ Resuelto | `exportar_datos_inversor()` + `docs/11-privacidad.md` |
+| HC-04 | Media | Altas, cambios de rol y bajas de usuarios quedaban como "sistema", sin el admin que las hizo | ✅ Resuelto | `gestionar-usuarios` |
+| HC-05 | Media | Sin Content-Security-Policy ni HSTS | ✅ Resuelto | `vercel.json` |
+| HC-06 | Baja | Edge Functions con CORS `*` y respuestas cacheables | ✅ Resuelto | `_shared/http.ts` |
+| HC-07 | Baja | La sesión no vencía por inactividad en equipos compartidos | ✅ Resuelto | `nucleo/inicio.js` (30 min) |
+| HC-08 | Baja | Contraseña mínima de 8 caracteres | ✅ Resuelto | App y `gestionar-usuarios` (12) |
+| HC-09 | Baja | Fotos de la rendición firmadas por 1 hora (la documentación decía 10 min); vencimiento del enlace calculado en UTC | ✅ Resuelto | `rendicion` |
+| HC-10 | Baja | `undici` (dependencia de desarrollo) con vulnerabilidades altas; sin control de dependencias ni de secretos en la CI | ✅ Resuelto | `package-lock.json`, CI, Dependabot |
+| HC-11 | Media | MFA no exigido a administradores | ⏸️ Pendiente | Requiere pantalla de enrolamiento (`docs/10-cumplimiento.md`) |
+| HC-12 | Baja | `script-src` con `'unsafe-inline'` por los `onclick` en línea | ⏸️ Diferido | Pasar los manejadores a `addEventListener` |
+
 ## Pendiente de decisión del negocio
 
 - ¿Un inversor debe ver las participaciones de los otros inversores de su obra?

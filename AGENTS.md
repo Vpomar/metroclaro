@@ -88,8 +88,16 @@ Detalle: `docs/06-base-de-datos.md`.
   `auth.getUser()` y el rol antes de hacer nada. El encabezado
   `Authorization` solo no alcanza.
 - Librerías externas: versión exacta y hash `integrity` (SRI).
+- La CSP de `vercel.json` es la lista de lo que la página puede cargar y a
+  dónde se puede conectar. Un servicio externo nuevo se agrega ahí; no se
+  agrega `'unsafe-eval'`.
+- Edge Functions nuevas: envolver el manejador con `servir()` de
+  `supabase/functions/_shared/http.ts` (CORS restringido, `no-store`).
+- El historial (`auditoria`) es de solo agregado y se conserva 10 años: no
+  se edita ni se borra, ni con la clave de servicio.
 
-Detalle: `docs/04-seguridad.md`.
+Detalle: `docs/04-seguridad.md`. Cumplimiento (SOC 2, ISO 27001, ISO 27701):
+`docs/10-cumplimiento.md` y `docs/11-privacidad.md`.
 
 ## Convenciones del código
 

@@ -11,6 +11,9 @@
 | [07 · Despliegue y nuevos clientes](07-despliegue.md) | Publicación, Edge Functions y alta de un cliente |
 | [08 · Respaldos](08-respaldos.md) | Qué respaldar, cómo y cómo restaurar |
 | [09 · Operación y soporte](09-operacion.md) | Tareas del día a día y problemas frecuentes |
+| [10 · Cumplimiento](10-cumplimiento.md) | Controles contra SOC 2, ISO 27001 e ISO 27701, evidencia y pendientes |
+| [11 · Privacidad](11-privacidad.md) | Datos personales, proveedores, retención y derechos del titular |
+| [12 · Incidentes](12-incidentes.md) | Qué hacer ante un problema de seguridad |
 | [Auditoría 2026-10](auditoria-2026-10.md) | Hallazgos de la auditoría y su estado |
 | [Decisiones](decisiones.md) | Por qué las cosas son como son |
 

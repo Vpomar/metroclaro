@@ -81,6 +81,13 @@ Las pruebas que verifican esta tabla están en `tests/seguridad/rls-roles.sql`.
 | `asistente` | admin, carga | Igual que la anterior; textos recortados |
 | `rendicion` | Cualquiera con un enlace | Token válido, activo y no vencido; devuelve solo lo de ese inversor, y de los demás solo totales por clase |
 
+Todas pasan por `_shared/http.ts`: solo aceptan llamadas de navegador desde
+los dominios de la app (otro origen recibe 403), solo `POST`, y responden con
+`Cache-Control: no-store`. La lista de orígenes se puede fijar por proyecto
+con el secreto `ORIGENES_PERMITIDOS`. CORS no reemplaza la validación de la
+sesión: un pedido sin `Origin` (servidor a servidor) pasa y lo frena
+`auth.getUser()`.
+
 Tener el encabezado `Authorization` **no alcanza**: la publishable key
 también viaja ahí. Por eso las funciones llaman a `auth.getUser()`.
 
@@ -95,8 +102,40 @@ también viaja ahí. Por eso las funciones llaman a `auth.getUser()`.
 
 ## Headers del sitio
 
-`vercel.json` agrega `X-Frame-Options: DENY`, `X-Content-Type-Options:
-nosniff`, `Referrer-Policy` y `Permissions-Policy`.
+`vercel.json` agrega `Content-Security-Policy`, `Strict-Transport-Security`,
+`Cross-Origin-Opener-Policy`, `X-Frame-Options: DENY`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy` y `Permissions-Policy`.
+`servidor-local.mjs` aplica los mismos headers, así que una violación de la
+CSP aparece en `npm run dev` y en las e2e antes de llegar a producción.
+
+**CSP.** Solo se ejecutan scripts propios y los de jsDelivr (con SRI); la
+página solo se conecta a Supabase (`*.supabase.co`) y a dolarapi. No se
+permite `eval`; sí WebAssembly (`wasm-unsafe-eval`), que usan el OCR y el
+lector de QR. `'unsafe-inline'` sigue en `script-src` por los manejadores
+`onclick` en línea: sacarlo implica pasar esos manejadores a
+`addEventListener`. Si se agrega un servicio externo, sumarlo a
+`connect-src` en `vercel.json` (una prueba lo controla).
+
+`rendicion.html` lleva además `Referrer-Policy: no-referrer` (el token va en
+la URL), `Cache-Control: no-store` y `X-Robots-Tag: noindex`.
+
+## Sesión
+
+- La sesión se cierra sola a los **30 minutos sin actividad**, medidos entre
+  todas las pestañas (`vigilarInactividad()` en `nucleo/inicio.js`).
+- Contraseñas de **12 caracteres** como mínimo (app y `gestionar-usuarios`).
+
+## Historial (`auditoria`)
+
+- Lo escribe solo el disparador `auditar` (y `gestionar-usuarios`, que deja
+  el administrador que hizo cada alta, cambio de rol o baja de usuario).
+- Es **de solo agregado**: `UPDATE`, `DELETE` y `TRUNCATE` fallan para
+  todos, incluidas la clave de servicio y el dueño de la tabla.
+- Se conserva **10 años**. `purgar_auditoria(fecha)` (solo clave de
+  servicio) borra lo anterior y deja constancia.
+- Restaurar un respaldo que incluya el historial exige deshabilitar el
+  disparador `proteger_auditoria` durante la carga, con un usuario dueño
+  de la tabla, y volver a habilitarlo; documentarlo como cambio.
 
 ## Verificar la seguridad
 

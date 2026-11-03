@@ -101,13 +101,22 @@ Se despliegan en **cada** proyecto de Supabase (ver
 |---|---|
 | `ANTHROPIC_API_KEY` | `leer-comprobante` y `asistente` |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Los inyecta Supabase solo |
+| `ORIGENES_PERMITIDOS` | Opcional. Orígenes que pueden llamar a las funciones desde el navegador, separados por comas. En producción: `https://<cliente>.metroclaro.com.ar` (sin localhost). Sin él se usa la lista de `_shared/http.ts` |
 
 Conviene una clave de Anthropic por cliente, con **límite de gasto**.
+
+Todas las funciones importan `supabase/functions/_shared/http.ts` (CORS,
+método y encabezados); `supabase functions deploy` lo incluye solo.
 
 ## Configuración de Auth (cada proyecto de Supabase)
 
 En *Authentication → Sign In / Providers*: **Allow new users to sign up**
 desactivado y **Confirm email** activado.
+
+En *Authentication → Policies / Password*: largo mínimo **12** y
+**Leaked password protection** activado. Habilitar MFA (TOTP). La lista
+completa de configuración de seguridad por proyecto está en
+[10 · Cumplimiento](10-cumplimiento.md#configuración-que-no-vive-en-el-repositorio).
 
 En *Authentication → URL Configuration*: **Site URL** =
 `https://<subdominio del cliente>.metroclaro.com.ar`, para que los mails de
