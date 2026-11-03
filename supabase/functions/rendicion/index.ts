@@ -10,17 +10,13 @@
 // =====================================================================
 
 import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
+import { servir } from '../_shared/http.ts';
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
 
 const json = (cuerpo: unknown, status = 200) =>
   new Response(JSON.stringify(cuerpo), {
     status,
-    headers: { ...CORS, 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' }
   });
 
 const db = createClient(
@@ -28,14 +24,18 @@ const db = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 );
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+// CORS, método y encabezados comunes: _shared/http.ts
+Deno.serve(servir(async (req) => {
 
   let token = '';
   try { ({ token } = await req.json()); }
   catch { return json({ error: 'Enlace inválido.' }, 400); }
 
-  if (!token || token.length < 20) return json({ error: 'Enlace inválido.' }, 400);
+  // Los tokens los genera la app: 48 caracteres [0-9a-z]. Cualquier otra
+  // cosa se rechaza antes de tocar la base.
+  if (typeof token !== 'string' || !/^[0-9a-z]{20,128}$/.test(token)) {
+    return json({ error: 'Enlace inválido.' }, 400);
+  }
 
   // 1. Validar el enlace
   const { data: enlace } = await db
@@ -47,7 +47,11 @@ Deno.serve(async (req) => {
   if (!enlace || !enlace.activo) {
     return json({ error: 'Este enlace ya no está disponible. Pedí uno nuevo.' }, 404);
   }
-  if (enlace.vence && enlace.vence < new Date().toISOString().slice(0, 10)) {
+  // "Hoy" en Argentina: en UTC, después de las 21 h un enlace que vence hoy
+  // ya figuraba vencido.
+  const hoyAr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+    .format(new Date());
+  if (enlace.vence && enlace.vence < hoyAr) {
     return json({ error: 'Este enlace venció. Pedí uno nuevo.' }, 410);
   }
 
@@ -85,13 +89,14 @@ Deno.serve(async (req) => {
 
   if (obra.error || inversor.error) return json({ error: 'No se pudo armar la rendición.' }, 500);
 
-  // 3. Enlaces firmados de las fotos de avance
+  // 3. Enlaces firmados de las fotos de avance. Vencen a los 10 minutos:
+  //    si el enlace se reenvía, las fotos no quedan abiertas.
   const fotos = [];
   for (const a of avances.data ?? []) {
     if (!a.archivo) continue;
     const i = a.archivo.indexOf('/');
     const { data } = await db.storage.from(a.archivo.slice(0, i))
-      .createSignedUrl(a.archivo.slice(i + 1), 3600);
+      .createSignedUrl(a.archivo.slice(i + 1), 600);
     fotos.push({ ...a, url: data?.signedUrl ?? null, archivo: undefined });
   }
 
@@ -124,4 +129,4 @@ Deno.serve(async (req) => {
     titulo: enlace.titulo,
     emitido: new Date().toISOString()
   });
-});
+}));

@@ -15,17 +15,13 @@
 // =====================================================================
 
 import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
+import { servir } from '../_shared/http.ts';
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
 
 const json = (cuerpo: unknown, status = 200) =>
   new Response(JSON.stringify(cuerpo), {
     status,
-    headers: { ...CORS, 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' }
   });
 // "codigo" le permite a la app explicar qué pasó (ver ERRORES_IA en la app)
 const falla = (codigo: string, error: string, status: number) => json({ codigo, error }, status);
@@ -97,8 +93,8 @@ const CONSIGNA = [
   '- No inventes datos: si algo no se lee con claridad, null.'
 ].join('\n');
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+// CORS, método y encabezados comunes: _shared/http.ts
+Deno.serve(servir(async (req) => {
 
   const rechazo = await exigirEquipo(req);
   if (rechazo) return rechazo;
@@ -188,4 +184,4 @@ Deno.serve(async (req) => {
     console.error(e);
     return falla('servicio', 'No se pudo interpretar el comprobante.', 502);
   }
-});
+}));
