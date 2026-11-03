@@ -49,7 +49,9 @@ for (const t of TABLAS) {
 
 console.log('\nFunciones de la base: anon no debe ejecutarlas');
 for (const [f, cuerpo] of [['rol_actual', {}], ['obra_visible', { o: '00000000-0000-0000-0000-000000000000' }],
-                           ['periodo_cerrado', { p_obra: '00000000-0000-0000-0000-000000000000' }]]) {
+                           ['periodo_cerrado', { p_obra: '00000000-0000-0000-0000-000000000000' }],
+                           ['exportar_datos_inversor', { p_inversor: '00000000-0000-0000-0000-000000000000' }],
+                           ['purgar_auditoria', { p_antes_de: '2000-01-01T00:00:00Z' }]]) {
   const r = await fetch(`${URL_SB}/rest/v1/rpc/${f}`, { method: 'POST',
     headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
   await r.text();

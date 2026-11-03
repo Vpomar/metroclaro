@@ -47,7 +47,8 @@ function vHistorial(o){
   }
   const TABLA = { comprobantes:'Comprobante', aportes:'Aporte', inversores:'Inversor',
                   obras:'Obra', documentos:'Documento' };
-  const ACCION = { alta:['Alta','v'], cambio:['Modificación','a'], baja:['Baja','r'] };
+  const ACCION = { alta:['Alta','v'], cambio:['Modificación','a'], baja:['Baja','r'],
+                   exportacion:['Exportación','a'] };
 
   return `
   <div class="acciones">
@@ -64,7 +65,7 @@ function vHistorial(o){
         (h.tabla==='aportes' ? (inv(d.inversor_id)?.nombre || 'aporte') : '');
       const monto = d.importe ? (d.moneda==='USD'?fmtUsd2(d.importe):fmtArs(d.importe)) : '';
       const difs = h.accion==='cambio' ? diferencias(h.antes, h.despues) : [];
-      const [etiqueta, color] = ACCION[h.accion];
+      const [etiqueta, color] = ACCION[h.accion] || [h.accion, 'a'];
       return `<tr>
         <td class="num">${new Date(h.cuando).toLocaleDateString('es-AR')}
           <br><span class="pct num">${new Date(h.cuando).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</span></td>

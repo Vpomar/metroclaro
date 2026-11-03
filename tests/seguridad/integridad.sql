@@ -63,3 +63,21 @@ select t.* from ids, lateral (values
   ('quitarse el rol al último admin',
    pruebas.valor(format($q$update public.perfiles set rol = 'carga' where id = %L returning 'quitado'$q$, admin)))
 ) as t(control, resultado);
+
+-- ---------------------------------------------------------------------
+--  Historial de solo agregado (migración hardening_cumplimiento).
+--  Se prueba como dueño de la tabla, que no pasa por RLS ni por GRANT:
+--  lo único que lo frena es el disparador. Esperado: los tres
+--  "rechazado". Correr en una consulta aparte, sin el set role de arriba.
+-- ---------------------------------------------------------------------
+reset role;
+select t.* from (values
+  ('historial: modificar una fila',
+   pruebas.valor($q$update public.auditoria set usuario = 'otro'
+     where id = (select max(id) from public.auditoria) returning 'modificado'$q$)),
+  ('historial: borrar una fila',
+   pruebas.valor($q$delete from public.auditoria
+     where id = (select max(id) from public.auditoria) returning 'borrado'$q$)),
+  ('historial: purgar dentro de los 10 años',
+   pruebas.valor($q$select public.purgar_auditoria(now() - interval '1 year')::text$q$))
+) as t(control, resultado);
