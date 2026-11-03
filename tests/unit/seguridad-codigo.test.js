@@ -97,3 +97,48 @@ describe('escrituras', () => {
     expect(app).not.toMatch(/toISOString\(\)\.slice\(0,\s*10\)/);
   });
 });
+
+describe('hardening de cumplimiento (docs/10-cumplimiento.md)', () => {
+  const vercel = JSON.parse(leer('vercel.json'));
+  const headersDe = fuente => Object.fromEntries(
+    (vercel.headers.find(h => h.source === fuente)?.headers || []).map(h => [h.key, h.value]));
+
+  it('el sitio publica CSP, HSTS y COOP', () => {
+    const h = headersDe('/(.*)');
+    const csp = h['Content-Security-Policy'] || '';
+    expect(csp).toMatch(/frame-ancestors 'none'/);
+    expect(csp).toMatch(/object-src 'none'/);
+    expect(csp).toMatch(/base-uri 'self'/);
+    // eval queda prohibido; WebAssembly sí (OCR y lector de QR)
+    expect(csp).not.toMatch(/'unsafe-eval'/);
+    expect(h['Strict-Transport-Security']).toMatch(/max-age=\d{8,}/);
+    expect(h['Cross-Origin-Opener-Policy']).toBe('same-origin');
+  });
+
+  it('la rendición no filtra el token por Referer ni queda en caché', () => {
+    const h = headersDe('/rendicion.html');
+    expect(h['Referrer-Policy']).toBe('no-referrer');
+    expect(h['Cache-Control']).toBe('no-store');
+  });
+
+  it('las Edge Functions no habilitan CORS para cualquier origen', () => {
+    const dir = path.join(RAIZ, 'supabase/functions');
+    const funciones = fs.readdirSync(dir).filter(f => !f.startsWith('_'));
+    expect(funciones.length).toBeGreaterThan(0);
+    for (const f of funciones) {
+      const codigo = leer(`supabase/functions/${f}/index.ts`);
+      expect(codigo, f).not.toMatch(/Access-Control-Allow-Origin['"]?\s*:\s*['"]\*/);
+      expect(codigo, f).toMatch(/Deno\.serve\(servir\(/);
+    }
+  });
+
+  it('la contraseña mínima es de 12 caracteres en la app y en el servidor', () => {
+    expect(leer('supabase/functions/gestionar-usuarios/index.ts')).toMatch(/password\.length < 12/);
+    expect(leer('public/js/vistas/usuarios.js')).toMatch(/password\.length < 12/);
+  });
+
+  it('la sesión se cierra por inactividad', () => {
+    expect(app).toMatch(/function vigilarInactividad\(/);
+    expect(app).toMatch(/vigilarInactividad\(\);/);
+  });
+});

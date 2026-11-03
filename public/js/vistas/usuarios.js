@@ -157,7 +157,7 @@ function formUsuario(){
       </select></div>
     <div class="campo ancho" id="wrap-pass" style="display:none">
       <label for="u-pass">Contraseña inicial</label>
-      <input id="u-pass" type="password" autocomplete="new-password" placeholder="mínimo 8 caracteres">
+      <input id="u-pass" type="password" autocomplete="new-password" placeholder="mínimo 12 caracteres">
       <span class="ayuda">Se la pasás vos por otro medio y conviene que la cambie al entrar.</span></div>
     <div class="campo ancho"><span class="ayuda">Con invitación la persona elige su propia
       contraseña y vos nunca la ves. Es la opción recomendada.</span></div>`,
@@ -166,7 +166,7 @@ function formUsuario(){
       const rol = val('u-rol'), modo = val('u-modo'), password = val('u-pass');
       if(!nombre) return err('Poné el nombre.');
       if(!email.includes('@')) return err('Revisá el email.');
-      if(modo==='password' && password.length < 8) return err('La contraseña necesita 8 caracteres o más.');
+      if(modo==='password' && password.length < 12) return err('La contraseña necesita 12 caracteres o más.');
       document.getElementById('ok').disabled = true;
       const r = await usuariosLlamar({ accion:'crear', nombre, email, rol, modo, password });
       if(!r){ const b = document.getElementById('ok'); if(b) b.disabled = false; return; }

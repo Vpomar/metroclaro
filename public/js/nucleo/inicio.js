@@ -24,6 +24,27 @@ document.getElementById('form-acceso').addEventListener('submit', async e => {
 
 async function salir(){ await sb.auth.signOut(); location.reload(); }
 
+/* Cierre por inactividad: la app se usa en equipos compartidos (obra,
+   estudio contable). Sin actividad durante este tiempo se cierra la sesión
+   para que nadie siga con la cuenta de otro (control de acceso, SOC 2 CC6.1
+   e ISO 27001 A.8.5). El tiempo se mide en todas las pestañas a la vez. */
+const MINUTOS_INACTIVIDAD = 30;
+const CLAVE_ACTIVIDAD = 'metroclaro:actividad';
+function vigilarInactividad(){
+  const marcar = () => { try{ localStorage.setItem(CLAVE_ACTIVIDAD, String(Date.now())); }catch(e){} };
+  const ultima = () => { try{ return Number(localStorage.getItem(CLAVE_ACTIVIDAD)) || 0; }catch(e){ return 0; } };
+  marcar();
+  let espera = 0;
+  ['pointerdown','keydown','wheel','touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => { if(Date.now() - espera > 15000){ espera = Date.now(); marcar(); } },
+      { passive: true }));
+  setInterval(async () => {
+    if(Date.now() - ultima() < MINUTOS_INACTIVIDAD * 60000) return;
+    try{ sessionStorage.setItem('metroclaro:salida', 'inactividad'); }catch(e){}
+    await salir();
+  }, 60000);
+}
+
 sb.auth.onAuthStateChange((_evento, sesion) => { if(sesion) iniciar(); });
 
 /* El buscador por teclado queda activo desde el arranque (Ctrl+K / ⌘K) */
@@ -63,6 +84,13 @@ iniciarTema();
       'Falta configurar la clave en config.js.';
     return;
   }
+  try{
+    if(sessionStorage.getItem('metroclaro:salida') === 'inactividad'){
+      sessionStorage.removeItem('metroclaro:salida');
+      document.getElementById('error-acceso').textContent =
+        'Se cerró la sesión por inactividad. Ingresá de nuevo.';
+    }
+  }catch(e){}
   const { data } = await sb.auth.getSession();
   if(data.session) iniciar();
 })();
@@ -90,6 +118,7 @@ async function iniciar(){
   document.getElementById('quien').textContent = `${p.nombre} · ${p.rol}`;
   document.querySelectorAll('.solo-equipo').forEach(e => { if(!puedeEditar()) e.remove(); });
   document.querySelectorAll('.solo-admin').forEach(e => { if(!esAdmin()) e.remove(); });
+  vigilarInactividad();
   await cargarDatos();
   traerCotizacion();
 }
