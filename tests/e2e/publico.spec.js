@@ -35,3 +35,20 @@ test('las librerías externas cargan con su hash de integridad', async ({ page }
   }));
   expect(cargadas).toEqual({ supabase: 'object', xlsx: 'object' });
 });
+
+test('las páginas públicas cargan con la CSP y sin violaciones', async ({ page }) => {
+  const violaciones = [];
+  page.on('console', m => { if (/Content Security Policy/i.test(m.text())) violaciones.push(m.text()); });
+
+  const r = await page.goto('/');
+  const csp = r.headers()['content-security-policy'] || '';
+  expect(csp).toContain("frame-ancestors 'none'");
+  expect(csp).toContain("object-src 'none'");
+  await expect(page.getByLabel('Email')).toBeVisible();
+
+  const rr = await page.goto('/rendicion.html?t=enlace-que-no-existe-0000000000');
+  expect(rr.headers()['referrer-policy']).toBe('no-referrer');
+  expect(rr.headers()['cache-control']).toBe('no-store');
+  await expect(page.getByText(/ya no está disponible|inválido/i)).toBeVisible();
+  expect(violaciones).toEqual([]);
+});

@@ -44,10 +44,25 @@ const TIPOS = {
 // Solo se sirve public/: respaldos, migraciones y secretos quedan afuera.
 const PROHIBIDO = /(^|\/)\./;
 
+// Los mismos headers de seguridad que publica Vercel (CSP incluida), para
+// que una violación aparezca en local y en las e2e antes de llegar a
+// producción. Las fuentes de vercel.json usadas son expresiones simples.
+const { headers: REGLAS_HEADERS = [] } =
+  JSON.parse(fs.readFileSync(path.join(PROYECTO, 'vercel.json'), 'utf8'));
+function headersDe(ruta){
+  const h = {};
+  for (const regla of REGLAS_HEADERS)
+    if (new RegExp('^' + regla.source + '$').test(ruta))
+      for (const { key, value } of regla.headers) h[key] = value;
+  // HSTS en http://localhost no aplica y el navegador lo ignora
+  delete h['Strict-Transport-Security'];
+  return h;
+}
+
 http.createServer((req, res) => {
   const ruta = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (ruta === '/config.js') {
-    res.writeHead(200, { 'Content-Type': TIPOS['.js'], 'Cache-Control': 'no-store' });
+    res.writeHead(200, { ...headersDe(ruta), 'Content-Type': TIPOS['.js'], 'Cache-Control': 'no-store' });
     if (URL_SB && KEY)
       return res.end(`window.CONFIG = ${JSON.stringify({ url: URL_SB, key: KEY, cliente: CLIENTE, entorno: ENTORNO })};\n`);
     // Sin .env.local: el cliente por defecto (staging), como hace Vercel con un dominio desconocido
@@ -60,7 +75,8 @@ http.createServer((req, res) => {
       || fs.statSync(archivo).isDirectory()) {
     res.writeHead(404); return res.end('No encontrado');
   }
-  res.writeHead(200, { 'Content-Type': TIPOS[path.extname(archivo)] || 'application/octet-stream',
+  res.writeHead(200, { ...headersDe(ruta),
+                       'Content-Type': TIPOS[path.extname(archivo)] || 'application/octet-stream',
                        'Cache-Control': 'no-store' });
   fs.createReadStream(archivo).pipe(res);
 }).listen(PUERTO, '127.0.0.1', () => {

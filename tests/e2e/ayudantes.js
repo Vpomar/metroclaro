@@ -7,15 +7,19 @@ import { datosDemo } from './datos-demo.js';
 export async function abrirConDatos(page, cambiar) {
   await page.route(/supabase\.co|dolarapi\.com/, (r) => r.abort());
   await page.goto('/');
-  await page.evaluate(({ datos, cambiar }) => {
+  await page.evaluate((datos) => {
     perfil = { id: 'demo', nombre: 'Usuario de prueba', rol: 'admin' };
     document.getElementById('acceso').classList.add('oculto');
     document.getElementById('app').classList.remove('oculto');
     document.getElementById('quien').textContent = 'Usuario de prueba · admin';
     D = datos;
-    if (cambiar) new Function('D', cambiar)(D);
+  }, datosDemo());
+  // Se evalúa como expresión de Playwright y no con new Function dentro de
+  // la página: la CSP de la app no permite eval.
+  if (cambiar) await page.evaluate(`(${cambiar})(D)`);
+  await page.evaluate(() => {
     obraActiva = D.obras[0].id;
     vista = 'panel';
     render();
-  }, { datos: datosDemo(), cambiar: cambiar ? `(${cambiar})(D)` : null });
+  });
 }
