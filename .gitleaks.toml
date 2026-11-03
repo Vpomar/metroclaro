@@ -1,0 +1,20 @@
+# Configuración de gitleaks para la CI (job "Dependencias y secretos").
+# Parte de las reglas por defecto y solo exceptúa lo que es público por
+# diseño. Nunca agregar acá una excepción para una clave real: si gitleaks
+# encuentra una, se rota la clave y después se limpia el historial.
+title = "metroclaro"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valores públicos por diseño"
+regexes = [
+  # Publishable keys de Supabase: van al navegador (docs/04-seguridad.md)
+  '''sb_publishable_[A-Za-z0-9_-]+''',
+]
+paths = [
+  # Librerías de terceros copiadas por npm run vendor
+  '''^public/vendor/''',
+  '''^package-lock\.json$''',
+]

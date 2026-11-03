@@ -1,0 +1,15 @@
+# Actualizaciones de dependencias (SOC 2 CC7.1 · ISO 27001 A.8.8).
+# Cada pull request de Dependabot pasa por la CI como cualquier otro.
+# Ojo: si se actualiza una librería de public/vendor, correr npm run vendor
+# en la misma rama (una prueba verifica que coincidan).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: "herramientas" }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+    commit-message: { prefix: "herramientas" }
