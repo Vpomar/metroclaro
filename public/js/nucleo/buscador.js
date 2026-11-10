@@ -36,7 +36,14 @@ function accionesBuscador(){
     hacer: () => verObra(x.id) }));
 
   r.push({ grupo:'Ir a', texto:'Panel general', hacer: () => verTab('panel') });
-  if(puedeEditar()) r.push({ grupo:'Ir a', texto:'Índices', hacer: () => verTab('indices') });
+  if(puedeEditar()){
+    r.push({ grupo:'Ir a', texto:'Negocios', hacer: () => verTab('negocios') });
+    r.push({ grupo:'Ir a', texto:'Índices', hacer: () => verTab('indices') });
+    r.push({ grupo:'Cargar', texto:'Nuevo negocio',
+      hacer: () => { verTab('negocios'); setTimeout(formNegocio, 30); } });
+    (D.negocios || []).forEach(g => r.push({ grupo:'Negocios', texto:g.nombre,
+      detalle:g.ubicacion || '', hacer: () => { negocioAbierto = g.id; verTab('negocios'); } }));
+  }
   if(esAdmin())     r.push({ grupo:'Ir a', texto:'Usuarios', hacer: () => verTab('usuarios') });
 
   if(o){

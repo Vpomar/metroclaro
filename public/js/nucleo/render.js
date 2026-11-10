@@ -33,10 +33,11 @@ function dibujar(){
       <span>${esc(o.nombre)}</span><small class="num">${avance}</small></button>`;
   }).join('');
 
-  const enPanel = vista === 'panel' || vista === 'usuarios' || vista === 'indices';
+  const enPanel = vista === 'panel' || vista === 'usuarios' || vista === 'indices'
+    || vista === 'negocios';
   const TABS = enPanel
     ? [['panel','Panel']]
-        .concat(puedeEditar() ? [['indices','Índices']] : [])
+        .concat(puedeEditar() ? [['negocios','Negocios'],['indices','Índices']] : [])
         .concat(esAdmin() ? [['usuarios','Usuarios']] : [])
     : [['resumen','Resumen'],['cajas','Cajas'],['gastos','Comprobantes'],['proveedores','Proveedores'],
        ['rubros','Rubros'],['honorarios','Honorarios'],['analisis','Análisis'],['unidades','Unidades'],
@@ -59,6 +60,7 @@ function dibujar(){
 
   document.getElementById('cuerpo').innerHTML =
       vista === 'panel'    ? vPanel()
+    : vista === 'negocios' ? vNegocios()
     : vista === 'indices'  ? vIndices()
     : vista === 'usuarios' ? vUsuarios()
     : !o ? `<div class="vacio">No hay obras visibles para tu usuario.</div>`
