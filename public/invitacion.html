@@ -437,11 +437,17 @@ function fallar(texto, titulo){
       headers: { 'Content-Type': 'application/json', 'apikey': window.CONFIG.key },
       body: JSON.stringify({ token })
     });
-    /* Si la función no está desplegada, Supabase devuelve 404 sin el
-       campo error: sin este control la página quedaba en blanco. */
-    if(r.status === 404 || r.status === 401)
-      return fallar('El sistema todavía no está listo para abrir invitaciones. ' +
-        'Avisale a quien te mandó el enlace.', 'Falta un paso');
+    /* Sin este control la página quedaba en blanco. Los dos casos se
+       distinguen porque se arreglan en lugares distintos. */
+    if(r.status === 404)
+      return fallar('No encontramos el servicio que abre las invitaciones. ' +
+        'Avisale a quien te mandó el enlace. (404)', 'Falta un paso');
+    if(r.status === 401 || r.status === 403)
+      return fallar('El servicio está pidiendo una sesión iniciada. ' +
+        'Avisale a quien te mandó el enlace. (' + r.status + ')', 'Falta un permiso');
+    if(r.status >= 500)
+      return fallar('El servicio falló al responder. Probá de nuevo en un rato. (' +
+        r.status + ')', 'Error del servidor');
     d = await r.json();
     if(d.error) return fallar(d.error, 'Enlace no disponible');
     if(!d.negocio) return fallar('La propuesta no tiene datos cargados.', 'Propuesta incompleta');
