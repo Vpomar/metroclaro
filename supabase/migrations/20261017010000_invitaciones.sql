@@ -52,3 +52,24 @@ comment on column public.negocios.expensas_las_pagaba_el_dueno is
 select 'tabla invitaciones' as objeto,
        (select count(*) from information_schema.tables
         where table_name = 'invitaciones')::text as ok;
+
+-- ---------------------------------------------------------------------
+--  Depósito para los renders del anteproyecto
+--
+--  Privado, como los demás. La invitación pública no lo lee directo:
+--  la función del servidor firma una URL temporal y la devuelve.
+-- ---------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('renders', 'renders', false)
+on conflict (id) do nothing;
+
+drop policy if exists render_ver    on storage.objects;
+drop policy if exists render_subir  on storage.objects;
+drop policy if exists render_borrar on storage.objects;
+
+create policy render_ver on storage.objects for select to authenticated
+  using (bucket_id = 'renders' and public.puede_editar());
+create policy render_subir on storage.objects for insert to authenticated
+  with check (bucket_id = 'renders' and public.puede_editar());
+create policy render_borrar on storage.objects for delete to authenticated
+  using (bucket_id = 'renders' and public.es_admin());

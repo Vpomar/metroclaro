@@ -154,6 +154,7 @@ const esc = t => String(t ?? '').replace(/[&<>"']/g,
   c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let G = null, aporte = 20000, precio = 0;
+/* El aporte siempre es un múltiplo del valor de la ficha */
 
 function curvaObra(meses){
   const p = [];
@@ -206,17 +207,17 @@ function calcular(monto, p){
   const prefLote = lote * (Math.pow(1+rLMes, mesVenta) - 1);
   const prefCash = egresos.reduce((s,e,i)=> s + e*(Math.pow(1+rMes, mesVenta-i)-1), 0);
   const preferente = prefLote + prefCash;
-  const excedente = neto - (capital + preferente);
+  const rentabilidad = neto - (capital + preferente);
 
   const parte = efectivo ? monto/efectivo : 0;
   const miPref = prefCash * parte;
-  const miExc = excedente > 0 ? excedente * ((+g.pct_exc_cash||0)/100) * parte : 0;
+  const miRent = rentabilidad > 0 ? rentabilidad * ((+g.pct_exc_cash||0)/100) * parte : 0;
 
   let cobro;
-  if(excedente >= 0){
-    cobro = monto + miPref + miExc;
+  if(rentabilidad >= 0){
+    cobro = monto + miPref + miRent;
   } else {
-    const perdida = -excedente;
+    const perdida = -rentabilidad;
     if(perdida <= preferente){
       cobro = monto + miPref * ((preferente - perdida)/preferente);
     } else {
@@ -227,7 +228,7 @@ function calcular(monto, p){
   const mio = egresos.map(e => -e * parte);
   mio[mesVenta] = (mio[mesVenta] || 0) + cobro;
 
-  return { monto, cobro, miPref, miExc, excedente, mesVenta,
+  return { monto, cobro, miPref, miRent, rentabilidad, mesVenta,
     equilibrio: (capital + preferente)/(1-(+g.pct_comision||0)/100),
     anual: tir(mio) };
 }
@@ -257,28 +258,52 @@ function armar(){
   </div>
 
   <h2>De qué se trata</h2>
-  <p class="t">El dueño del lote lo aporta al proyecto a valor de tasación. El resto se aporta
-    en efectivo para construir. Cuando la casa se vende, primero vuelve el capital de cada uno,
-    después la tasa preferente del ${(+g.tasa_efectivo||0)}% anual en dólares por el tiempo que
-    la plata estuvo adentro, y recién entonces se reparte lo que sobra.</p>
+  <p class="t">El dueño del lote lo aporta al proyecto a valor de tasación. El resto se integra
+    en efectivo para construir. <strong>Tu dinero queda respaldado en un bien de capital</strong>:
+    la casa, que es el activo del proyecto y existe desde el primer día en forma de terreno.</p>
+  <p class="t">Al vender, primero vuelve el capital de cada uno, después la tasa preferente por
+    el tiempo que el dinero estuvo invertido, y recién entonces se reparte la rentabilidad.</p>
 
   <ol class="pasos">
-    <li><b>01</b><span>Ponés el monto que quieras.</span></li>
-    <li><b>02</b><span>Se va usando a medida que avanza la obra, no todo de golpe.</span></li>
-    <li><b>03</b><span>Seguís el avance y las cuentas desde tu celular.</span></li>
-    <li><b>04</b><span>Al vender, cobrás capital más tasa más tu parte de lo que sobre.</span></li>
+    <li><b>01</b><span>La participación se divide en fichas de ${F.usd(+g.valor_ficha||5000)}.
+      Tomás las que quieras.</span></li>
+    <li><b>02</b><span>El dinero se integra a medida que avanza la obra, no todo junto.</span></li>
+    <li><b>03</b><span>Seguís el avance y las cuentas desde tu teléfono.</span></li>
+    <li><b>04</b><span>Al vender cobrás tu capital, la tasa preferente y tu parte de la
+      rentabilidad.</span></li>
   </ol>
 
+  <h2>Cómo se reparte</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:13.5px">
+    <tbody>
+      <tr><td style="padding:12px 0;border-bottom:1px solid var(--filete);vertical-align:top">
+        <strong>Quien aporta el lote</strong><br>
+        <span style="color:var(--tinta-2)">Tasa del ${(+g.tasa_lote||0)}% anual más el
+        ${(+g.pct_exc_lote||0)}% de la rentabilidad. Además deja de pagar las expensas
+        y los impuestos del inmueble: los absorbe el proyecto.</span></td></tr>
+      <tr><td style="padding:12px 0;border-bottom:1px solid var(--filete);vertical-align:top">
+        <strong>Quien administra el proyecto</strong><br>
+        <span style="color:var(--tinta-2)">Honorarios del ${(+g.pct_honorarios||0)}% sobre la
+        obra por proyecto, conducción y administración, más el ${(+g.pct_exc_admin||0)}% de
+        la rentabilidad.</span></td></tr>
+      <tr><td style="padding:12px 0;vertical-align:top">
+        <strong>Quien integra el efectivo</strong><br>
+        <span style="color:var(--tinta-2)">Tasa del ${(+g.tasa_efectivo||0)}% anual en dólares
+        más el ${(+g.pct_exc_cash||0)}% de la rentabilidad, a prorrata de las fichas que
+        tenga.</span></td></tr>
+    </tbody>
+  </table>
+
   <div class="calc">
-    <p class="rot">Si participás con</p>
+    <p class="rot">Si tomás</p>
     <div class="monto">
-      <span>US$</span>
-      <input id="monto" type="number" min="1000" step="1000" value="${aporte}"
-        inputmode="numeric" aria-label="Monto a aportar">
+      <input id="fichas" type="number" min="1" step="1" value="${Math.round(aporte/(+g.valor_ficha||5000))}"
+        inputmode="numeric" aria-label="Cantidad de fichas" style="max-width:4.5ch">
+      <span id="fichas-txt">fichas</span>
     </div>
-    <input id="d-monto" type="range" min="5000" max="200000" step="1000" value="${aporte}"
-      aria-label="Monto a aportar">
-    <div class="topes"><span>US$ 5.000</span><span>US$ 200.000</span></div>
+    <input id="d-monto" type="range" min="1" max="40" step="1"
+      value="${Math.round(aporte/(+g.valor_ficha||5000))}" aria-label="Cantidad de fichas">
+    <div class="topes"><span>1 ficha</span><span>40 fichas</span></div>
 
     <div class="bloque-precio">
       <p class="rot">Y la casa se vende a</p>
@@ -298,10 +323,11 @@ function armar(){
 
   <div class="riesgo">
     <strong>Lo que tenés que saber.</strong>
-    La tasa preferente no está garantizada: es el orden en que se cobra, no una promesa.
-    Si la casa se vende por menos de lo estimado, primero se recorta esa tasa y, si aun así
-    no alcanza, se pierde parte del capital, a prorrata de lo que puso cada uno.
-    El plazo puede estirarse. Los números son antes de impuestos.
+    La tasa preferente no está garantizada: define el orden en que se cobra, no es una promesa
+    de rendimiento. Si la casa se vende por menos de lo estimado, primero se recorta esa tasa y,
+    si aun así no alcanza, se afecta el capital, a prorrata de lo que integró cada uno.
+    El respaldo es el inmueble, y un inmueble puede tardar en venderse: el plazo puede estirarse.
+    Los números son antes de impuestos.
     Esto es una invitación a conversar, no una oferta pública.
   </div>
 
@@ -313,19 +339,19 @@ function armar(){
 
 function pintar(){
   const d = calcular(aporte, precio);
-  const gana = d.excedente >= 0;
+  const gana = d.rentabilidad >= 0;
   const m2 = +G.m2 || 0;
 
   document.getElementById('precio-txt').textContent = F.usd(precio);
   document.getElementById('precio-m2').textContent = m2 ? F.usd2(precio/m2) + ' el m²' : '';
 
   document.getElementById('resultado').innerHTML = `
-    <div class="linea"><span>Te vuelve lo que pusiste</span>
+    <div class="linea"><span>Vuelve tu capital</span>
       <span>${F.usd(d.monto)}</span></div>
-    <div class="linea"><span>Más la tasa por ${d.mesVenta} meses</span>
+    <div class="linea"><span>Más la tasa preferente por ${d.mesVenta} meses</span>
       <span>${gana ? F.usd(d.miPref) : 'se recorta'}</span></div>
-    <div class="linea"><span>Más tu parte de lo que sobre</span>
-      <span>${gana ? F.usd(d.miExc) : '—'}</span></div>
+    <div class="linea"><span>Más tu parte de la rentabilidad</span>
+      <span>${gana ? F.usd(d.miRent) : '—'}</span></div>
     <div class="linea total"><span>Cobrás</span><span>${F.usd(d.cobro)}</span></div>
     <div class="destacado">
       <b style="color:${d.anual === null ? '#F2967A' : d.anual >= .12 ? '#7FC9A1' : '#F2F1EE'}">${
@@ -333,14 +359,19 @@ function pintar(){
       <span>anual en dólares<br>si se vende a ${F.usd(precio)}</span>
     </div>`;
 
+  const vf = +G.valor_ficha || 5000;
+  const nf = Math.max(1, Math.round(aporte / vf));
+  document.getElementById('fichas-txt').textContent =
+    `${nf === 1 ? 'ficha' : 'fichas'} de ${F.usd(vf)} · ${F.usd(nf * vf)}`;
   document.getElementById('pie-calc').textContent = gana
-    ? `Por debajo de ${F.usd(d.equilibrio)} el proyecto no alcanza a pagar la tasa. Moviendo la barra de arriba ves qué pasa en cada caso.`
-    : `A este precio no alcanza para pagar la tasa. El piso para que se pague entera está en ${F.usd(d.equilibrio)}.`;
+    ? `Por debajo de ${F.usd(d.equilibrio)} el proyecto no alcanza a pagar la tasa preferente. Moviendo la barra ves qué pasa en cada caso.`
+    : `A este precio no alcanza para pagar la tasa preferente entera. El piso está en ${F.usd(d.equilibrio)}.`;
 }
 
 function enganchar(){
   const g = G;
-  const campo = document.getElementById('monto');
+  const vf = +g.valor_ficha || 5000;
+  const campo = document.getElementById('fichas');
   const dm = document.getElementById('d-monto');
   const dp = document.getElementById('d-precio');
 
@@ -353,11 +384,12 @@ function enganchar(){
   dp.value = tope > base ? (precio - base)/(tope - base)*100 : 50;
 
   campo.addEventListener('input', () => {
-    aporte = Math.max(1000, parseFloat(campo.value) || 0);
-    dm.value = Math.min(200000, aporte); pintar();
+    const n = Math.max(1, Math.round(parseFloat(campo.value) || 1));
+    aporte = n * vf; dm.value = Math.min(40, n); pintar();
   });
   dm.addEventListener('input', () => {
-    aporte = parseFloat(dm.value); campo.value = aporte; pintar();
+    const n = parseFloat(dm.value);
+    aporte = n * vf; campo.value = n; pintar();
   });
   dp.addEventListener('input', () => {
     precio = base + (tope - base) * (+dp.value/100);
@@ -391,8 +423,14 @@ function fallar(texto, titulo){
       headers: { 'Content-Type': 'application/json', 'apikey': window.CONFIG.key },
       body: JSON.stringify({ token })
     });
+    /* Si la función no está desplegada, Supabase devuelve 404 sin el
+       campo error: sin este control la página quedaba en blanco. */
+    if(r.status === 404 || r.status === 401)
+      return fallar('El sistema todavía no está listo para abrir invitaciones. ' +
+        'Avisale a quien te mandó el enlace.', 'Falta un paso');
     d = await r.json();
     if(d.error) return fallar(d.error, 'Enlace no disponible');
+    if(!d.negocio) return fallar('La propuesta no tiene datos cargados.', 'Propuesta incompleta');
   } catch(e) {
     return fallar('No pudimos conectarnos. Probá de nuevo en un rato.');
   }

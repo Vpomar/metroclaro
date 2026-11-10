@@ -63,6 +63,6 @@ async function pintarFotos(){
     if(data) img.src = data.signedUrl;
   }
 }
-new MutationObserver(() => { if(vista==='avance') pintarFotos(); })
+new MutationObserver(() => { if(vista==='avance' || vista==='negocios') pintarFotos(); })
   .observe(document.getElementById('cuerpo'), { childList:true });
 

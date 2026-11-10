@@ -55,7 +55,8 @@ Deno.serve(async (req) => {
     .select(`nombre, ubicacion, m2, costo_m2, pct_honorarios, expensas_mes,
              meses_obra, mes_venta, precio_venta, pct_comision,
              tasa_efectivo, tasa_lote, pct_exc_admin, pct_exc_lote, pct_exc_cash,
-             tasacion_1, tasacion_2, tasacion_3, criterio_lote, valor_lote, render`)
+             tasacion_1, tasacion_2, tasacion_3, criterio_lote, valor_lote,
+             valor_ficha, expensas_las_pagaba_el_dueno, render`)
     .eq('id', enlace.negocio_id)
     .maybeSingle();
 
@@ -67,6 +68,18 @@ Deno.serve(async (req) => {
     .eq('id', enlace.id)
     .then(() => {});
 
+  // 4. El render vive en un depósito privado: se firma una URL temporal
+  //    para que la página pública pueda mostrarlo sin ver el resto
+  let render: string | null = null;
+  if (negocio.render) {
+    const corte = negocio.render.indexOf('/');
+    const { data: firmada } = await db.storage
+      .from(negocio.render.slice(0, corte))
+      .createSignedUrl(negocio.render.slice(corte + 1), 60 * 60);
+    render = firmada?.signedUrl ?? null;
+  }
+
   // El propietario y las notas internas no salen: es material comercial
-  return json({ titulo: enlace.titulo || negocio.nombre, negocio });
+  return json({ titulo: enlace.titulo || negocio.nombre,
+                negocio: { ...negocio, render } });
 });
