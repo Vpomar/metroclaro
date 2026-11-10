@@ -13,6 +13,19 @@
    ===================================================================== */
 
 let negocioAbierto = null;
+/* El precio que se está mirando con la barra. No se guarda: es para
+   entender el negocio moviéndolo, no para cambiar el supuesto. */
+let precioMirado = null;
+function mirarPrecio(v){
+  precioMirado = parseFloat(v);
+  const d = cuentasNegocio(negocioActual(), precioMirado);
+  const caja = document.getElementById('mirador');
+  if(caja) caja.innerHTML = miradorHtml(negocioActual(), d);
+}
+function negocioActual(){
+  const gs = negociosDe();
+  return gs.find(x => x.id === negocioAbierto) || gs[0];
+}
 
 function negociosDe(){ return (D.negocios || []).slice()
   .sort((a,b) => b.creado_en.localeCompare(a.creado_en)); }
@@ -117,8 +130,14 @@ function cuentasNegocio(g, precioAlternativo){
   const flujoCash = egresos.map(e => -e);
   flujoCash[mesVenta] = (flujoCash[mesVenta] || 0) + cobraCash;
 
+  /* El dueño del lote venía pagando las expensas. Al absorberlas el
+     proyecto, se las ahorra enteras; lo único que le cuesta es la parte
+     que esas expensas le restan al excedente que él cobra. */
+  const ahorroDueno = (g.expensas_las_pagaba_el_dueno === false)
+    ? 0 : expensas - (excedente >= 0 ? expensas * pL : 0);
+
   const comisionPct = (+g.pct_comision || 0) / 100;
-  return { lote, construccion, honorarios, expensas, efectivo, capital,
+  return { lote, construccion, honorarios, expensas, efectivo, capital, ahorroDueno,
     meses, mesVenta, precio, comision, neto, egresos,
     prefLote, prefCash, preferente, aDevolver, excedente, perdida,
     cobraLote, cobraCash, cobraAdm, totalAdm: honorarios + cobraAdm,
@@ -148,6 +167,7 @@ function vNegocios(){
   ${puedeEditar() ? `<div class="acciones">
     <button class="btn" onclick="formNegocio()">Nuevo negocio</button>
     <button class="btn sec" onclick="formNegocio('${abierto.id}')">Editar supuestos</button>
+    <button class="btn sec" onclick="compartirNegocio('${abierto.id}')">Compartir propuesta</button>
     <button class="btn sec" onclick="window.print()">Imprimir</button>
   </div>` : ''}
 
@@ -166,6 +186,27 @@ function vNegocios(){
 
 function verNegocio(id){ negocioAbierto = id; render(); }
 
+/* La barra de precio con su resultado. Mover el precio es la forma más
+   rápida de entender dónde está parado el negocio. */
+function miradorHtml(g, d){
+  const gana = d.excedente >= 0;
+  return `
+  <div class="fila" style="margin-bottom:0">
+    <div class="kpi ${gana ? '' : 'alerta'}"><p class="r">Excedente a repartir</p>
+      <p class="v num">${fmtUsd(d.excedente)}</p>
+      <p class="s">${gana ? 'después de capital y tasa' : 'no alcanza'}</p></div>
+    <div class="kpi"><p class="r">Rinde el lote</p>
+      <p class="v num">${d.tirLote === null ? 'pierde' : fmtPct(d.tirLote * 100)}</p>
+      <p class="s">más ${fmtUsd(d.ahorroDueno)} de expensas que se ahorra</p></div>
+    <div class="kpi"><p class="r">Rinden los aportantes</p>
+      <p class="v num">${d.tirCash === null ? 'pierden' : fmtPct(d.tirCash * 100)}</p>
+      <p class="s">sobre ${fmtUsd(d.efectivo)}</p></div>
+    <div class="kpi"><p class="r">Se lleva el administrador</p>
+      <p class="v num">${fmtUsd(d.totalAdm)}</p>
+      <p class="s">honorarios más excedente</p></div>
+  </div>`;
+}
+
 function detalleNegocio(g){
   const d = cuentasNegocio(g);
   const gana = d.excedente >= 0;
@@ -180,25 +221,20 @@ function detalleNegocio(g){
     ${g.propietario ? `<p class="pct">Lote de ${esc(g.propietario)}</p>` : ''}
   </div>
 
-  <div class="fila">
-    <div class="kpi ${gana ? '' : 'alerta'}"><p class="r">Excedente a repartir</p>
-      <p class="v num">${fmtUsd(d.excedente)}</p>
-      <p class="s">${gana
-        ? 'después de capital y tasa preferente'
-        : 'no alcanza: nadie cobra excedente'}</p></div>
-    <div class="kpi"><p class="r">Precio de equilibrio</p>
-      <p class="v num">${fmtUsd(d.equilibrio)}</p>
-      <p class="s">solo el capital: ${fmtUsd(d.soloCapital)}</p></div>
-    <div class="kpi"><p class="r">Rinde el lote</p>
-      <p class="v num">${d.tirLote === null ? 'pierde' : fmtPct(d.tirLote * 100)}</p>
-      <p class="s">anual, sobre ${fmtUsd(d.lote)}</p></div>
-    <div class="kpi"><p class="r">Rinden los aportantes</p>
-      <p class="v num">${d.tirCash === null ? 'pierden' : fmtPct(d.tirCash * 100)}</p>
-      <p class="s">anual, sobre ${fmtUsd(d.efectivo)}</p></div>
-    <div class="kpi"><p class="r">Se lleva el administrador</p>
-      <p class="v num">${fmtUsd(d.totalAdm)}</p>
-      <p class="s">${fmtUsd(d.honorarios)} de honorarios más excedente</p></div>
+  <div class="acciones no-imprimir" style="margin-bottom:6px;align-items:baseline">
+    <label for="ng-mirar" style="font-size:11px;color:var(--gris)">Si se vende a</label>
+    <strong class="num" style="font-size:19px;font-weight:400;letter-spacing:-.035em"
+      id="ng-mirar-txt">${fmtUsd(d.precio)}</strong>
+    <span class="pct" style="margin:0">equilibrio en ${fmtUsd(d.equilibrio)} ·
+      solo el capital ${fmtUsd(d.soloCapital)}</span>
   </div>
+  <input id="ng-mirar" type="range" class="no-imprimir"
+    min="${Math.round(d.soloCapital * 0.8)}" max="${Math.round(d.precio * 1.3)}" step="5000"
+    value="${Math.round(d.precio)}"
+    oninput="document.getElementById('ng-mirar-txt').textContent=fmtUsd(this.value);mirarPrecio(this.value)"
+    style="width:100%;accent-color:var(--naranja);margin:0 0 18px">
+
+  <div id="mirador">${miradorHtml(g, d)}</div>
 
   <h3>La cascada</h3>
   <table><tbody>
@@ -243,6 +279,11 @@ function detalleNegocio(g){
         <span class="pct" style="display:inline">${fmtPct(g.pct_exc_lote)}</span></td>
       <td class="der num" style="font-weight:500">${fmtUsd(d.cobraLote)}</td>
       <td class="der num">${d.tirLote === null ? 'pierde' : fmtPct(d.tirLote * 100)}</td></tr>
+    ${d.ahorroDueno > 0 ? `<tr><td style="padding-left:22px;color:var(--gris)">
+      Además deja de pagar las expensas</td>
+      <td class="der"></td><td class="der"></td><td class="der ocultar-chico"></td>
+      <td class="der num" style="color:var(--verde)">${fmtUsd(d.ahorroDueno)}</td>
+      <td class="der"></td></tr>` : ''}
     <tr><td>Aportantes de efectivo</td>
       <td class="der num">${fmtUsd(d.efectivo)}</td>
       <td class="der num">${gana ? fmtUsd(d.prefCash) : '—'}</td>
@@ -257,6 +298,11 @@ function detalleNegocio(g){
       <td class="der num" style="font-weight:500">${fmtUsd(d.totalAdm)}</td>
       <td class="der">—</td></tr>
   </tbody></table>
+  ${d.ahorroDueno > 0 ? `<p class="sub">El dueño del lote, además de lo que cobra, deja de
+  pagar ${fmtUsd(d.expensas)} de expensas e impuestos durante los ${d.mesVenta} meses: los
+  absorbe el proyecto. Neto de lo que eso le resta al excedente, se ahorra
+  ${fmtUsd(d.ahorroDueno)}. Es parte de lo que gana y conviene decirlo en la reunión.</p>` : ''}
+
   <p class="sub">El administrador no pone capital, así que no tiene tasa de retorno: cobra
   ${fmtUsd(d.honorarios)} de honorarios durante la obra más su parte del excedente.
   Cobra por los dos lados, y conviene que esté a la vista desde el primer día.</p>
@@ -346,6 +392,11 @@ function formNegocio(id){
     ${n('costo_m2', 'Costo de construcción USD/m²', '50')}
     ${n('pct_honorarios', 'Honorarios %', '1', 'proyecto, conducción y administración')}
     ${n('expensas_mes', 'Expensas e impuestos por mes', '50')}
+    <div class="campo"><label for="ng-expensas_las_pagaba_el_dueno">¿Las venía pagando el dueño?</label>
+      <select id="ng-expensas_las_pagaba_el_dueno">
+        <option value="si" ${g.expensas_las_pagaba_el_dueno !== false ? 'selected' : ''}>Sí, se las ahorra</option>
+        <option value="no" ${g.expensas_las_pagaba_el_dueno === false ? 'selected' : ''}>No</option>
+      </select><span class="ayuda">al absorberlas el proyecto, es un beneficio suyo</span></div>
     ${n('meses_obra', 'Plazo de obra en meses', '1')}
     ${n('mes_venta', 'Se vende en el mes', '1')}
 
@@ -384,10 +435,85 @@ function formNegocio(id){
         tasa_efectivo: num('tasa_efectivo') || 0, tasa_lote: num('tasa_lote') || 0,
         pct_exc_admin: num('pct_exc_admin') || 0, pct_exc_lote: num('pct_exc_lote') || 0,
         pct_exc_cash: num('pct_exc_cash') || 0,
+        expensas_las_pagaba_el_dueno: val('ng-expensas_las_pagaba_el_dueno') === 'si',
         nota: val('ng-nota'), creado_por: perfil.id
       };
       cerrar();
       await guardar('negocios', datos, id);
       if(!id) negocioAbierto = null;
     });
+}
+
+
+/* ---------- Compartir la propuesta ----------
+   Un enlace público por negocio, sin usuario ni contraseña. El que lo
+   abre ve el proyecto y puede mover el precio y su aporte. */
+function urlInvitacion(token){
+  return location.origin + location.pathname.replace(/[^/]*$/, '') +
+    'invitacion.html?t=' + token;
+}
+
+async function compartirNegocio(id){
+  const g = (D.negocios || []).find(x => x.id === id);
+  if(!g) return;
+
+  const previas = (D.invitaciones || []).filter(x => x.negocio_id === id && x.activo);
+  let enlace = previas[0];
+
+  if(!enlace){
+    /* Token largo y aleatorio: el enlace es la única llave */
+    const bytes = new Uint8Array(36);
+    crypto.getRandomValues(bytes);
+    const token = Array.from(bytes, b => b.toString(36).padStart(2, '0')).join('').slice(0, 48);
+    const { data, error } = await sb.from('invitaciones')
+      .insert({ token, negocio_id: id, titulo: g.nombre, creado_por: perfil.id })
+      .select().single();
+    if(error) return aviso('No se pudo crear el enlace: ' + error.message, true);
+    enlace = data;
+    await cargarDatos();
+  }
+
+  const url = urlInvitacion(enlace.token);
+  const texto = `${g.nombre}${g.ubicacion ? ' · ' + g.ubicacion : ''}\n` +
+    `${g.m2} m² · ${g.meses_obra} meses de obra · tasa preferente del ${g.tasa_efectivo}% anual en dólares\n\n` +
+    `Mirá la propuesta y probá con el monto que quieras:\n${url}`;
+
+  modal('Compartir la propuesta', `
+    <div class="campo ancho"><span class="ayuda">
+      Cualquiera con este enlace ve la propuesta: el anteproyecto, los plazos y una
+      calculadora donde puede mover el precio de venta y su aporte. No ve el nombre del
+      dueño del lote ni las notas internas.
+    </span></div>
+    <div class="campo ancho"><label for="inv-url">Enlace</label>
+      <input id="inv-url" value="${esc(url)}" readonly onclick="this.select()"></div>
+    <div class="campo ancho"><label for="inv-texto">Mensaje</label>
+      <textarea id="inv-texto" rows="5">${esc(texto)}</textarea>
+      <span class="ayuda">Se puede editar antes de mandarlo.</span></div>
+    <div class="campo ancho" style="flex-direction:row;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="mandarPorWhatsapp()">Abrir WhatsApp</button>
+      <button class="btn sec" onclick="copiarTexto('inv-url','Enlace copiado')">Copiar enlace</button>
+      <button class="btn sec" onclick="copiarTexto('inv-texto','Mensaje copiado')">Copiar mensaje</button>
+    </div>
+    ${enlace.visitas ? `<div class="campo ancho"><span class="ayuda">
+      Abierto ${enlace.visitas} ${enlace.visitas === 1 ? 'vez' : 'veces'}.</span></div>` : ''}`,
+    cerrar);
+  /* Acá no se guarda nada: el botón principal solo cierra */
+  const ok = document.getElementById('ok');
+  if(ok) ok.textContent = 'Listo';
+}
+
+function mandarPorWhatsapp(){
+  const t = document.getElementById('inv-texto').value;
+  window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank', 'noopener');
+}
+
+async function copiarTexto(id, mensaje){
+  const campo = document.getElementById(id);
+  try {
+    await navigator.clipboard.writeText(campo.value);
+    aviso(mensaje);
+  } catch(e) {
+    campo.select();
+    aviso('Copialo con Ctrl+C');
+  }
 }

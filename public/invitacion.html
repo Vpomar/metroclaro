@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Invitación a participar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="icon" href="img/icono-192.png" sizes="192x192" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    --hoja:#FFFFFF; --chrome:#FAFAF8;
+    --tinta:#161514; --tinta-2:#55524D; --tinta-3:#908C85;
+    --filete:#ECE9E3; --filete-2:#DFDBD3;
+    --noche:#141416;
+    --naranja:#F26B1D; --naranja-t:#AE480A;
+    --verde:#2D6A4D; --rojo:#A33A28;
+    --r:4px;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --hoja:#121211; --chrome:#171614; --tinta:#EDEBE7; --tinta-2:#A8A39B;
+      --tinta-3:#7E7A73; --filete:#262421; --filete-2:#35322E; --noche:#1E1D1B;
+      --naranja-t:#F2924F; --verde:#6FBF95; --rojo:#E08571;
+      color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--hoja);color:var(--tinta);
+    font-family:'Archivo',system-ui,-apple-system,sans-serif;
+    font-size:15px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+  .n{font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .oculto{display:none!important}
+  :focus-visible{outline:1.5px solid var(--naranja);outline-offset:2px;border-radius:2px}
+
+  /* Se lee en el teléfono: una columna angosta */
+  .hoja{max-width:460px;margin:0 auto;padding:22px 20px 60px}
+
+  .marca{display:flex;align-items:baseline;gap:9px;margin-bottom:24px}
+  .logo{font-size:15px;font-weight:700;letter-spacing:-.045em;line-height:1}
+  .logo i{font-style:normal;font-weight:400;color:var(--tinta-3)}
+  .logo s{color:var(--naranja);text-decoration:none}
+  .marca span{font-size:10.5px;color:var(--tinta-3);letter-spacing:.1em;text-transform:uppercase}
+
+  h1{margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-.032em;line-height:1.18}
+  .lugar{margin:0 0 20px;font-size:13px;color:var(--tinta-3)}
+
+  .render{position:relative;border-radius:8px;overflow:hidden;background:var(--chrome);
+    border:1px solid var(--filete);aspect-ratio:4/3;display:flex;align-items:center;
+    justify-content:center;margin-bottom:6px}
+  .render img{width:100%;height:100%;object-fit:cover;display:block}
+  .render .falta{text-align:center;padding:24px;color:var(--tinta-3);font-size:12.5px;line-height:1.6}
+  .epigrafe{margin:0 0 26px;font-size:11.5px;color:var(--tinta-3)}
+
+  .fichas{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-bottom:26px}
+  .ficha{padding:13px 12px 2px;border-top:1px solid var(--filete-2)}
+  .ficha:first-child{padding-left:0}
+  .ficha .r{margin:0 0 5px;font-size:10.5px;color:var(--tinta-3)}
+  .ficha .v{margin:0;font-size:18px;font-weight:400;letter-spacing:-.03em;
+    font-family:'IBM Plex Mono',monospace}
+
+  h2{margin:34px 0 10px;font-size:13px;font-weight:600;letter-spacing:-.008em}
+  p.t{margin:0 0 14px;font-size:14px;color:var(--tinta-2);line-height:1.65}
+
+  .pasos{list-style:none;margin:0;padding:0}
+  .pasos li{padding:13px 0;border-top:1px solid var(--filete);
+    display:flex;gap:13px;align-items:baseline}
+  .pasos li b{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+    color:var(--naranja);font-weight:500}
+  .pasos li span{font-size:13.5px;color:var(--tinta-2);line-height:1.55}
+
+  /* La calculadora */
+  .calc{background:var(--noche);color:#F2F1EE;border-radius:9px;
+    padding:22px 22px 20px;margin:24px 0 0;border:1px solid transparent}
+  @media (prefers-color-scheme: dark){ .calc{border-color:var(--filete-2)} }
+  .calc .rot{margin:0 0 10px;font-size:11px;color:rgba(242,241,238,.52)}
+  .calc .monto{display:flex;align-items:baseline;gap:8px;margin-bottom:2px}
+  .calc .monto span{font-size:17px;color:rgba(242,241,238,.42)}
+  .calc .monto input{flex:1;min-width:0;background:none;border:0;
+    border-bottom:1px solid rgba(255,255,255,.18);color:#F2F1EE;font:inherit;
+    font-size:30px;font-weight:400;letter-spacing:-.04em;
+    font-family:'IBM Plex Mono',monospace;padding:0 0 5px;outline:0}
+  .calc .monto input:focus{border-bottom-color:var(--naranja)}
+  input[type=range]{width:100%;accent-color:var(--naranja);margin:14px 0 0}
+  .topes{display:flex;justify-content:space-between;margin-top:4px;
+    font-size:10.5px;color:rgba(242,241,238,.4)}
+
+  .bloque-precio{margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.12)}
+  .bloque-precio .fila{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .bloque-precio .fila b{font-family:'IBM Plex Mono',monospace;font-size:19px;
+    font-weight:400;letter-spacing:-.035em}
+  .bloque-precio .fila span{font-size:11px;color:rgba(242,241,238,.52)}
+
+  .resultado{margin-top:20px;padding-top:17px;border-top:1px solid rgba(255,255,255,.12)}
+  .linea{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    padding:7px 0;font-size:13px}
+  .linea span:first-child{color:rgba(242,241,238,.56)}
+  .linea span:last-child{font-family:'IBM Plex Mono',monospace;letter-spacing:-.02em}
+  .linea.total{margin-top:9px;padding-top:13px;border-top:1px solid rgba(255,255,255,.12);
+    font-size:15px;font-weight:500}
+  .linea.total span:first-child{color:#F2F1EE}
+  .destacado{margin-top:16px;display:flex;align-items:baseline;gap:9px}
+  .destacado b{font-size:30px;font-weight:400;letter-spacing:-.045em;
+    font-family:'IBM Plex Mono',monospace}
+  .destacado span{font-size:12px;color:rgba(242,241,238,.52)}
+
+  .nota{margin:14px 0 0;font-size:12px;color:var(--tinta-3);line-height:1.65}
+  .riesgo{border:1px solid var(--filete-2);border-radius:var(--r);padding:15px 16px;
+    margin-top:26px;font-size:12.5px;color:var(--tinta-2);line-height:1.65}
+  .riesgo strong{color:var(--tinta)}
+
+  .cierre{margin-top:28px;padding-top:22px;border-top:1px solid var(--filete-2)}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    padding:14px;border:1px solid var(--tinta);border-radius:var(--r);
+    background:var(--tinta);color:var(--hoja);
+    font:inherit;font-size:15px;font-weight:500;text-decoration:none;cursor:pointer}
+  .btn:hover{opacity:.86}
+  .pie-marca{margin:24px 0 0;font-size:11px;color:var(--tinta-3);text-align:center}
+
+  .centro{text-align:center;padding:70px 20px;color:var(--tinta-3);font-size:13.5px}
+  .centro h2{margin:0 0 8px;font-size:17px;color:var(--tinta)}
+</style>
+</head>
+<body>
+
+<div class="hoja">
+  <div id="cargando" class="centro">Abriendo la propuesta…</div>
+
+  <div id="error" class="centro oculto">
+    <h2 id="error-titulo">No se pudo abrir</h2>
+    <p id="error-texto"></p>
+  </div>
+
+  <div id="contenido" class="oculto"></div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const F = {
+  usd: v => (v<0?'−':'') + 'US$ ' + Math.abs(Math.round(v)).toLocaleString('es-AR'),
+  usd2: v => 'US$ ' + (+v||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}),
+  pct: v => (+v||0).toLocaleString('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%'
+};
+const esc = t => String(t ?? '').replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let G = null, aporte = 20000, precio = 0;
+
+function curvaObra(meses){
+  const p = [];
+  for(let i=0;i<meses;i++){
+    const x = (i+0.5)/meses;
+    p.push(Math.exp(-Math.pow((x-0.5)/0.28,2)/2));
+  }
+  const s = p.reduce((a,b)=>a+b,0);
+  return p.map(v=>v/s);
+}
+
+function tir(flujo){
+  const van = r => flujo.reduce((s,f,i)=>s+f/Math.pow(1+r,i),0);
+  if(van(0) <= 0) return null;
+  let lo = 0, hi = 3;
+  if(van(hi) > 0) return null;
+  for(let k=0;k<140;k++){ const m=(lo+hi)/2; if(van(m)>0) lo=m; else hi=m; }
+  return Math.pow(1+(lo+hi)/2,12)-1;
+}
+
+function valorLote(g){
+  const ts = [g.tasacion_1, g.tasacion_2, g.tasacion_3].map(x=>+x||0).filter(x=>x>0);
+  if(!ts.length) return +g.valor_lote || 0;
+  if(g.criterio_lote === 'promedio') return ts.reduce((a,b)=>a+b,0)/ts.length;
+  if(g.criterio_lote === 'menor') return Math.min(...ts);
+  return +g.valor_lote || 0;
+}
+
+/* Cuánto le toca a quien pone "monto" del efectivo, si se vende a "p" */
+function calcular(monto, p){
+  const g = G;
+  const lote = valorLote(g);
+  const construccion = (+g.m2||0) * (+g.costo_m2||0);
+  const honorarios = construccion * (+g.pct_honorarios||0)/100;
+  const meses = Math.max(1, +g.meses_obra||1);
+  const mesVenta = Math.max(meses, +g.mes_venta||meses);
+  const expensas = (+g.expensas_mes||0) * mesVenta;
+
+  const efectivo = construccion + honorarios + expensas;
+  const capital = lote + efectivo;
+  const neto = p * (1 - (+g.pct_comision||0)/100);
+
+  const rMes  = Math.pow(1 + (+g.tasa_efectivo||0)/100, 1/12) - 1;
+  const rLMes = Math.pow(1 + (+g.tasa_lote||0)/100, 1/12) - 1;
+
+  const egresos = new Array(mesVenta+1).fill(0);
+  curvaObra(meses).forEach((x,i)=> egresos[i] += (construccion + honorarios) * x);
+  for(let i=0;i<mesVenta;i++) egresos[i] += (+g.expensas_mes||0);
+
+  const prefLote = lote * (Math.pow(1+rLMes, mesVenta) - 1);
+  const prefCash = egresos.reduce((s,e,i)=> s + e*(Math.pow(1+rMes, mesVenta-i)-1), 0);
+  const preferente = prefLote + prefCash;
+  const excedente = neto - (capital + preferente);
+
+  const parte = efectivo ? monto/efectivo : 0;
+  const miPref = prefCash * parte;
+  const miExc = excedente > 0 ? excedente * ((+g.pct_exc_cash||0)/100) * parte : 0;
+
+  let cobro;
+  if(excedente >= 0){
+    cobro = monto + miPref + miExc;
+  } else {
+    const perdida = -excedente;
+    if(perdida <= preferente){
+      cobro = monto + miPref * ((preferente - perdida)/preferente);
+    } else {
+      cobro = monto - (perdida - preferente) * (capital ? monto/capital : 0);
+    }
+  }
+
+  const mio = egresos.map(e => -e * parte);
+  mio[mesVenta] = (mio[mesVenta] || 0) + cobro;
+
+  return { monto, cobro, miPref, miExc, excedente, mesVenta,
+    equilibrio: (capital + preferente)/(1-(+g.pct_comision||0)/100),
+    anual: tir(mio) };
+}
+
+function armar(){
+  const g = G;
+  return `
+  <div class="marca">
+    <span class="logo"><b>metro</b><i>claro</i><s>.</s></span>
+    <span>Invitación a participar</span>
+  </div>
+
+  <h1>${esc(g.nombre)}</h1>
+  <p class="lugar">${g.ubicacion ? esc(g.ubicacion) + ' · ' : ''}${+g.m2||0} m² a construir</p>
+
+  <div class="render">
+    ${g.render
+      ? `<img src="${esc(g.render)}" alt="Anteproyecto">`
+      : `<div class="falta">Anteproyecto en preparación</div>`}
+  </div>
+  <p class="epigrafe">Imagen ilustrativa del anteproyecto. Puede variar.</p>
+
+  <div class="fichas">
+    <div class="ficha"><p class="r">A construir</p><p class="v">${+g.m2||0} m²</p></div>
+    <div class="ficha"><p class="r">Plazo de obra</p><p class="v">${+g.meses_obra||0} meses</p></div>
+    <div class="ficha"><p class="r">Tasa preferente</p><p class="v">${(+g.tasa_efectivo||0)}%</p></div>
+  </div>
+
+  <h2>De qué se trata</h2>
+  <p class="t">El dueño del lote lo aporta al proyecto a valor de tasación. El resto se aporta
+    en efectivo para construir. Cuando la casa se vende, primero vuelve el capital de cada uno,
+    después la tasa preferente del ${(+g.tasa_efectivo||0)}% anual en dólares por el tiempo que
+    la plata estuvo adentro, y recién entonces se reparte lo que sobra.</p>
+
+  <ol class="pasos">
+    <li><b>01</b><span>Ponés el monto que quieras.</span></li>
+    <li><b>02</b><span>Se va usando a medida que avanza la obra, no todo de golpe.</span></li>
+    <li><b>03</b><span>Seguís el avance y las cuentas desde tu celular.</span></li>
+    <li><b>04</b><span>Al vender, cobrás capital más tasa más tu parte de lo que sobre.</span></li>
+  </ol>
+
+  <div class="calc">
+    <p class="rot">Si participás con</p>
+    <div class="monto">
+      <span>US$</span>
+      <input id="monto" type="number" min="1000" step="1000" value="${aporte}"
+        inputmode="numeric" aria-label="Monto a aportar">
+    </div>
+    <input id="d-monto" type="range" min="5000" max="200000" step="1000" value="${aporte}"
+      aria-label="Monto a aportar">
+    <div class="topes"><span>US$ 5.000</span><span>US$ 200.000</span></div>
+
+    <div class="bloque-precio">
+      <p class="rot">Y la casa se vende a</p>
+      <div class="fila">
+        <b class="n" id="precio-txt">—</b>
+        <span id="precio-m2">—</span>
+      </div>
+      <input id="d-precio" type="range" min="0" max="100" value="50"
+        aria-label="Precio de venta">
+      <div class="topes"><span id="tope-1">—</span><span id="tope-2">—</span></div>
+    </div>
+
+    <div class="resultado" id="resultado"></div>
+  </div>
+
+  <p class="nota" id="pie-calc">—</p>
+
+  <div class="riesgo">
+    <strong>Lo que tenés que saber.</strong>
+    La tasa preferente no está garantizada: es el orden en que se cobra, no una promesa.
+    Si la casa se vende por menos de lo estimado, primero se recorta esa tasa y, si aun así
+    no alcanza, se pierde parte del capital, a prorrata de lo que puso cada uno.
+    El plazo puede estirarse. Los números son antes de impuestos.
+    Esto es una invitación a conversar, no una oferta pública.
+  </div>
+
+  <div class="cierre">
+    <a class="btn" id="btn-contacto" href="#">Quiero saber más</a>
+    <p class="pie-marca">Administra Estudio Pomar Di Lorenzo · Rosario</p>
+  </div>`;
+}
+
+function pintar(){
+  const d = calcular(aporte, precio);
+  const gana = d.excedente >= 0;
+  const m2 = +G.m2 || 0;
+
+  document.getElementById('precio-txt').textContent = F.usd(precio);
+  document.getElementById('precio-m2').textContent = m2 ? F.usd2(precio/m2) + ' el m²' : '';
+
+  document.getElementById('resultado').innerHTML = `
+    <div class="linea"><span>Te vuelve lo que pusiste</span>
+      <span>${F.usd(d.monto)}</span></div>
+    <div class="linea"><span>Más la tasa por ${d.mesVenta} meses</span>
+      <span>${gana ? F.usd(d.miPref) : 'se recorta'}</span></div>
+    <div class="linea"><span>Más tu parte de lo que sobre</span>
+      <span>${gana ? F.usd(d.miExc) : '—'}</span></div>
+    <div class="linea total"><span>Cobrás</span><span>${F.usd(d.cobro)}</span></div>
+    <div class="destacado">
+      <b style="color:${d.anual === null ? '#F2967A' : d.anual >= .12 ? '#7FC9A1' : '#F2F1EE'}">${
+        d.anual === null ? 'pierde' : F.pct(d.anual*100)}</b>
+      <span>anual en dólares<br>si se vende a ${F.usd(precio)}</span>
+    </div>`;
+
+  document.getElementById('pie-calc').textContent = gana
+    ? `Por debajo de ${F.usd(d.equilibrio)} el proyecto no alcanza a pagar la tasa. Moviendo la barra de arriba ves qué pasa en cada caso.`
+    : `A este precio no alcanza para pagar la tasa. El piso para que se pague entera está en ${F.usd(d.equilibrio)}.`;
+}
+
+function enganchar(){
+  const g = G;
+  const campo = document.getElementById('monto');
+  const dm = document.getElementById('d-monto');
+  const dp = document.getElementById('d-precio');
+
+  /* La barra de precio va desde una venta mala hasta una muy buena */
+  const base = (+g.precio_venta||0) * 0.78;
+  const tope = (+g.precio_venta||0) * 1.26;
+  document.getElementById('tope-1').textContent = F.usd(base);
+  document.getElementById('tope-2').textContent = F.usd(tope);
+  precio = +g.precio_venta || 0;
+  dp.value = tope > base ? (precio - base)/(tope - base)*100 : 50;
+
+  campo.addEventListener('input', () => {
+    aporte = Math.max(1000, parseFloat(campo.value) || 0);
+    dm.value = Math.min(200000, aporte); pintar();
+  });
+  dm.addEventListener('input', () => {
+    aporte = parseFloat(dm.value); campo.value = aporte; pintar();
+  });
+  dp.addEventListener('input', () => {
+    precio = base + (tope - base) * (+dp.value/100);
+    precio = Math.round(precio/1000)*1000;
+    pintar();
+  });
+
+  const texto = encodeURIComponent(`Hola, me interesa participar en ${g.nombre}.`);
+  document.getElementById('btn-contacto').href =
+    (window.CONFIG && window.CONFIG.whatsapp)
+      ? `https://wa.me/${window.CONFIG.whatsapp}?text=${texto}`
+      : `mailto:${(window.CONFIG && window.CONFIG.contacto) || 'sistemas@pomardilorenzo.com.ar'}?subject=${encodeURIComponent(g.nombre)}`;
+}
+
+function fallar(texto, titulo){
+  document.getElementById('cargando').classList.add('oculto');
+  document.getElementById('error').classList.remove('oculto');
+  if(titulo) document.getElementById('error-titulo').textContent = titulo;
+  document.getElementById('error-texto').textContent = texto;
+}
+
+(async () => {
+  if(!window.CONFIG) return fallar('Falta la configuración del sistema.');
+  const token = new URLSearchParams(location.search).get('t');
+  if(!token) return fallar('El enlace está incompleto. Pedí uno nuevo a quien te lo mandó.');
+
+  let d;
+  try {
+    const r = await fetch(`${window.CONFIG.url}/functions/v1/invitacion`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': window.CONFIG.key },
+      body: JSON.stringify({ token })
+    });
+    d = await r.json();
+    if(d.error) return fallar(d.error, 'Enlace no disponible');
+  } catch(e) {
+    return fallar('No pudimos conectarnos. Probá de nuevo en un rato.');
+  }
+
+  G = d.negocio;
+  document.title = G.nombre + ' · Invitación a participar';
+  document.getElementById('cargando').classList.add('oculto');
+  const c = document.getElementById('contenido');
+  c.classList.remove('oculto');
+  c.innerHTML = armar();
+  enganchar();
+  pintar();
+})();
+</script>
+</body>
+</html>

@@ -51,7 +51,8 @@ async function cargarDatos(){
     todo('cuotas', q => q.order('numero')),
     todo('enlaces', q => q.order('creado_en')),
     todo('unidades', q => q.order('orden')),
-    todo('negocios', q => q.order('creado_en'))
+    todo('negocios', q => q.order('creado_en')),
+    todo('invitaciones', q => q.order('creado_en'))
   ];
   const r = await Promise.all(t);
   const malo = r.find(x => x.error);
@@ -63,7 +64,7 @@ async function cargarDatos(){
         pedidos:r[15].data, respuestas:r[16].data,
         analisis:r[17].data, niveles:r[18].data,
         indices:r[19].data, cuotas:r[20].data, enlaces:r[21].data,
-        unidades_obra:r[22].data, negocios:r[23].data };
+        unidades_obra:r[22].data, negocios:r[23].data, invitaciones:r[24].data };
   if(!obraActiva || !D.obras.some(o => o.id === obraActiva))
     obraActiva = D.obras[0]?.id ?? null;
   render();
