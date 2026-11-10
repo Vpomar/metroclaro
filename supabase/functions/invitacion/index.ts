@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
              meses_obra, mes_venta, precio_venta, pct_comision,
              tasa_efectivo, tasa_lote, pct_exc_admin, pct_exc_lote, pct_exc_cash,
              tasacion_1, tasacion_2, tasacion_3, criterio_lote, valor_lote,
-             valor_ficha, expensas_las_pagaba_el_dueno, render`)
+             valor_ficha, expensas_las_pagaba_el_dueno, efectivo_al_inicio, render`)
     .eq('id', enlace.negocio_id)
     .maybeSingle();
 

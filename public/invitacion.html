@@ -201,8 +201,14 @@ function calcular(monto, p){
   const rLMes = Math.pow(1 + (+g.tasa_lote||0)/100, 1/12) - 1;
 
   const egresos = new Array(mesVenta+1).fill(0);
-  curvaObra(meses).forEach((x,i)=> egresos[i] += (construccion + honorarios) * x);
-  for(let i=0;i<mesVenta;i++) egresos[i] += (+g.expensas_mes||0);
+  if(g.efectivo_al_inicio === false){
+    /* Se llama a medida que avanza la obra */
+    curvaObra(meses).forEach((x,i)=> egresos[i] += (construccion + honorarios) * x);
+    for(let i=0;i<mesVenta;i++) egresos[i] += (+g.expensas_mes||0);
+  } else {
+    /* Cada uno paga su ficha al entrar */
+    egresos[0] = efectivo;
+  }
 
   const prefLote = lote * (Math.pow(1+rLMes, mesVenta) - 1);
   const prefCash = egresos.reduce((s,e,i)=> s + e*(Math.pow(1+rMes, mesVenta-i)-1), 0);
@@ -225,12 +231,17 @@ function calcular(monto, p){
     }
   }
 
-  const mio = egresos.map(e => -e * parte);
-  mio[mesVenta] = (mio[mesVenta] || 0) + cobro;
+  /* Lo que el inversor compara con un plazo fijo: cuánto ganó sobre lo
+     que comprometió y a cuánto equivale por año. No la tasa interna
+     sobre el dinero desembolsado, que da más alto y confunde. */
+  const ganancia = cobro - monto;
+  const anual = (monto > 0 && mesVenta > 0)
+    ? Math.pow(cobro / monto, 12 / mesVenta) - 1
+    : null;
 
-  return { monto, cobro, miPref, miRent, rentabilidad, mesVenta,
-    equilibrio: (capital + preferente)/(1-(+g.pct_comision||0)/100),
-    anual: tir(mio) };
+  return { monto, cobro, miPref, miRent, rentabilidad, mesVenta, ganancia, anual,
+    directa: monto > 0 ? ganancia / monto : 0,
+    equilibrio: (capital + preferente)/(1-(+g.pct_comision||0)/100) };
 }
 
 function armar(){
@@ -353,10 +364,13 @@ function pintar(){
     <div class="linea"><span>Más tu parte de la rentabilidad</span>
       <span>${gana ? F.usd(d.miRent) : '—'}</span></div>
     <div class="linea total"><span>Cobrás</span><span>${F.usd(d.cobro)}</span></div>
+    <div class="linea" style="padding-top:11px"><span>Ganás en ${d.mesVenta} meses</span>
+      <span style="color:${d.ganancia >= 0 ? '#7FC9A1' : '#F2967A'}">${
+        F.usd(d.ganancia)} · ${F.pct(d.directa*100)}</span></div>
     <div class="destacado">
-      <b style="color:${d.anual === null ? '#F2967A' : d.anual >= .12 ? '#7FC9A1' : '#F2F1EE'}">${
-        d.anual === null ? 'pierde' : F.pct(d.anual*100)}</b>
-      <span>anual en dólares<br>si se vende a ${F.usd(precio)}</span>
+      <b style="color:${d.anual === null || d.anual < 0 ? '#F2967A' : d.anual >= .12 ? '#7FC9A1' : '#F2F1EE'}">${
+        d.anual === null ? '—' : F.pct(d.anual*100)}</b>
+      <span>equivalente anual en dólares<br>si se vende a ${F.usd(precio)}</span>
     </div>`;
 
   const vf = +G.valor_ficha || 5000;

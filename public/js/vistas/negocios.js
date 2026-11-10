@@ -86,10 +86,15 @@ function cuentasNegocio(g, precioAlternativo){
   const rMes  = Math.pow(1 + (+g.tasa_efectivo || 0) / 100, 1/12) - 1;
   const rLMes = Math.pow(1 + (+g.tasa_lote || 0) / 100, 1/12) - 1;
 
-  /* Cuándo sale cada peso del efectivo */
+  /* Cuándo sale cada peso del efectivo. Cambia bastante los números:
+     pagando al entrar se devenga más tasa y queda menos rentabilidad. */
   const egresos = new Array(mesVenta + 1).fill(0);
-  curvaDeObra(meses).forEach((p, i) => egresos[i] += (construccion + honorarios) * p);
-  for(let i = 0; i < mesVenta; i++) egresos[i] += (+g.expensas_mes || 0);
+  if(g.efectivo_al_inicio === false){
+    curvaDeObra(meses).forEach((p, i) => egresos[i] += (construccion + honorarios) * p);
+    for(let i = 0; i < mesVenta; i++) egresos[i] += (+g.expensas_mes || 0);
+  } else {
+    egresos[0] = efectivo;
+  }
 
   const prefLote = lote * (Math.pow(1 + rLMes, mesVenta) - 1);
   const prefCash = egresos.reduce((s, e, i) => s + e * (Math.pow(1 + rMes, mesVenta - i) - 1), 0);
@@ -149,6 +154,12 @@ function cuentasNegocio(g, precioAlternativo){
     prefLote, prefCash, preferente, aDevolver, excedente, perdida,
     cobraLote, cobraCash, cobraAdm, totalAdm: honorarios + cobraAdm,
     tirLote: tirAnualDe(flujoLote), tirCash: tirAnualDe(flujoCash),
+    /* Lo que ve el inversor: sobre lo que comprometió, no sobre lo
+       desembolsado. Da más bajo y es lo honesto de mostrar. */
+    anualCash: (efectivo > 0 && mesVenta > 0)
+      ? Math.pow(cobraCash / efectivo, 12 / mesVenta) - 1 : null,
+    anualLote: (lote > 0 && mesVenta > 0)
+      ? Math.pow(cobraLote / lote, 12 / mesVenta) - 1 : null,
     equilibrio: aDevolver / (1 - comisionPct),
     soloCapital: capital / (1 - comisionPct) };
 }
@@ -203,10 +214,10 @@ function miradorHtml(g, d){
       <p class="v num">${fmtUsd(d.excedente)}</p>
       <p class="s">${gana ? 'después de capital y tasa' : 'no alcanza'}</p></div>
     <div class="kpi"><p class="r">Rinde el lote</p>
-      <p class="v num">${d.tirLote === null ? 'pierde' : fmtPct(d.tirLote * 100)}</p>
+      <p class="v num">${d.anualLote === null ? '—' : fmtPct(d.anualLote * 100)}</p>
       <p class="s">más ${fmtUsd(d.ahorroDueno)} de expensas que se ahorra</p></div>
     <div class="kpi"><p class="r">Rinden los aportantes</p>
-      <p class="v num">${d.tirCash === null ? 'pierden' : fmtPct(d.tirCash * 100)}</p>
+      <p class="v num">${d.anualCash === null ? '—' : fmtPct(d.anualCash * 100)}</p>
       <p class="s">${d.fichas} fichas de ${fmtUsd(d.valorFicha)}${
         d.resto > 1 ? ' más ' + fmtUsd(d.resto) : ''}</p></div>
     <div class="kpi"><p class="r">Se lleva el administrador</p>
@@ -295,7 +306,7 @@ function detalleNegocio(g){
       <td class="der num ocultar-chico">${gana ? fmtUsd(d.excedente * (+g.pct_exc_lote/100)) : '—'}
         <span class="pct" style="display:inline">${fmtPct(g.pct_exc_lote)}</span></td>
       <td class="der num" style="font-weight:500">${fmtUsd(d.cobraLote)}</td>
-      <td class="der num">${d.tirLote === null ? 'pierde' : fmtPct(d.tirLote * 100)}</td></tr>
+      <td class="der num">${d.anualLote === null ? '—' : fmtPct(d.anualLote * 100)}</td></tr>
     ${d.ahorroDueno > 0 ? `<tr><td style="padding-left:22px;color:var(--gris)">
       Además deja de pagar las expensas</td>
       <td class="der"></td><td class="der"></td><td class="der ocultar-chico"></td>
@@ -307,7 +318,7 @@ function detalleNegocio(g){
       <td class="der num ocultar-chico">${gana ? fmtUsd(d.excedente * (+g.pct_exc_cash/100)) : '—'}
         <span class="pct" style="display:inline">${fmtPct(g.pct_exc_cash)}</span></td>
       <td class="der num" style="font-weight:500">${fmtUsd(d.cobraCash)}</td>
-      <td class="der num">${d.tirCash === null ? 'pierden' : fmtPct(d.tirCash * 100)}</td></tr>
+      <td class="der num">${d.anualCash === null ? '—' : fmtPct(d.anualCash * 100)}</td></tr>
     <tr><td>Administrador</td>
       <td class="der">—</td><td class="der">—</td>
       <td class="der num ocultar-chico">${gana ? fmtUsd(d.cobraAdm) : '—'}
@@ -341,8 +352,8 @@ function detalleNegocio(g){
           <td class="num">${fmtUsd(p)}${cerca ? ' <span class="chip a">estimado</span>' : ''}</td>
           <td class="der num ocultar-chico">${g.m2 ? fmtUsd2(p / g.m2) : '—'}</td>
           <td class="der num" style="${x.excedente < 0 ? 'color:var(--rojo)' : ''}">${fmtUsd(x.excedente)}</td>
-          <td class="der num">${x.tirLote === null ? 'pierde' : fmtPct(x.tirLote * 100)}</td>
-          <td class="der num">${x.tirCash === null ? 'pierden' : fmtPct(x.tirCash * 100)}</td>
+          <td class="der num">${x.anualLote === null ? '—' : fmtPct(x.anualLote * 100)}</td>
+          <td class="der num">${x.anualCash === null ? '—' : fmtPct(x.anualCash * 100)}</td>
           <td class="der num ocultar-chico">${fmtUsd(x.totalAdm)}</td>
         </tr>`);
       }
@@ -422,6 +433,11 @@ function formNegocio(id){
       el efectivo entra de a poco.</span></div>
     ${n('precio_venta', 'Precio de venta estimado', '10000')}
     ${n('valor_ficha', 'Valor de cada ficha', '1000', 'la participación en efectivo se divide en fichas')}
+    <div class="campo"><label for="ng-efectivo_al_inicio">¿Cuándo se integra el efectivo?</label>
+      <select id="ng-efectivo_al_inicio">
+        <option value="inicio" ${g.efectivo_al_inicio !== false ? 'selected' : ''}>Al tomar la ficha</option>
+        <option value="curva" ${g.efectivo_al_inicio === false ? 'selected' : ''}>A medida que avanza la obra</option>
+      </select><span class="ayuda">pagando al entrar se devenga más tasa y queda menos rentabilidad</span></div>
     ${n('pct_comision', 'Comisión inmobiliaria %', '0.5')}
     ${n('tasa_efectivo', 'Tasa del efectivo %', '0.5')}
     ${n('tasa_lote', 'Tasa del lote %', '0.5')}
@@ -460,6 +476,7 @@ function formNegocio(id){
         pct_exc_admin: num('pct_exc_admin') || 0, pct_exc_lote: num('pct_exc_lote') || 0,
         pct_exc_cash: num('pct_exc_cash') || 0,
         valor_ficha: num('valor_ficha') || 5000,
+        efectivo_al_inicio: val('ng-efectivo_al_inicio') === 'inicio',
         expensas_las_pagaba_el_dueno: val('ng-expensas_las_pagaba_el_dueno') === 'si',
         nota: val('ng-nota'), creado_por: perfil.id
       };
